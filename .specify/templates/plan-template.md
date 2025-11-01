@@ -31,7 +31,40 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+### Principle I: User-Centric Motivation Design
+- [ ] 機能がユーザーのモチベーション維持に貢献するか？
+- [ ] タスク完了時の即時フィードバックが設計されているか？
+- [ ] 「開発者が孤独を感じない」という視点で検証したか？
+
+### Principle II: MVP-First & Phased Delivery
+- [ ] この機能はどのPhaseに属するか明確か？
+- [ ] 独立して価値を提供できるか？
+- [ ] Phase間の依存関係は最小化されているか？
+
+### Principle III: Firebase-First Architecture
+- [ ] Firebase Authenticationで認証を実装しているか？
+- [ ] Cloud Firestoreをメインストレージとして使用しているか？
+- [ ] カスタムバックエンドサーバーを避けているか？
+
+### Principle IV: AI Abstraction & Resilience
+- [ ] AI呼び出しは抽象化レイヤーを通しているか？
+- [ ] フォールバック機構が実装されているか？
+- [ ] AI生成コンテンツのログ記録が設計されているか？
+
+### Principle V: Legal & Compliance by Design
+- [ ] DevCoin経済システムは無料/有料を分離しているか？
+- [ ] 有料DevCoinの6ヶ月有効期限を実装しているか？
+- [ ] プライバシーポリシー・利用規約への影響を検討したか？
+
+### Principle VI: Flutter Cross-Platform Strategy
+- [ ] Riverpodで状態管理を実装しているか？
+- [ ] Material Design 3に準拠しているか？
+- [ ] Widget Test + Integration Testが計画されているか？
+
+### Principle VII: Community-Driven Growth
+- [ ] コミュニティ機能はスパム対策を含んでいるか？
+- [ ] 外部API依存の実現性検証（PoC）を行ったか？
+- [ ] 健全なコミュニティ育成の観点で設計したか？
 
 ## Project Structure
 
@@ -56,43 +89,55 @@ specs/[###-feature]/
 -->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+# Solo Dev Quest App: Flutter + Firebase Architecture
+lib/
+├── core/
+│   ├── constants/          # アプリ定数、テーマ、色定義
+│   ├── utils/              # ヘルパー関数、拡張メソッド
+│   ├── errors/             # カスタムエラークラス
+│   └── router/             # go_router設定
+├── features/
+│   ├── auth/               # 認証機能
+│   │   ├── data/           # Firebase Auth連携
+│   │   ├── domain/         # ユーザーモデル、リポジトリインターフェース
+│   │   ├── presentation/   # ログイン・サインアップ画面
+│   │   └── providers/      # Riverpod プロバイダー
+│   ├── tasks/              # タスク管理機能
+│   ├── visualization/      # 進捗可視化（マラソンランナー等）
+│   ├── ai/                 # AI機能（褒め、説教、仮想クライアント）
+│   ├── devcoin/            # DevCoin経済システム
+│   ├── community/          # Q&A、SNS連携、タイムライン
+│   └── [feature-name]/     # 新機能用ディレクトリ（この計画で追加）
+└── shared/
+    ├── widgets/            # 共通UIコンポーネント
+    ├── models/             # 共通データモデル
+    └── services/           # 共通サービス（Analytics等）
 
-tests/
-├── contract/
-├── integration/
-└── unit/
+test/
+├── unit/                   # 単体テスト
+├── widget/                 # ウィジェットテスト
+└── integration/            # 統合テスト
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
+functions/                  # Firebase Cloud Functions
 ├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+│   ├── ai/                 # AI API呼び出し処理
+│   ├── devcoin/            # DevCoin管理ロジック
+│   ├── notifications/      # プッシュ通知処理
+│   └── scheduled/          # スケジュールジョブ
+├── package.json
+└── tsconfig.json
 
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+assets/
+├── images/                 # 画像アセット
+├── animations/             # Lottieアニメーション
+└── fonts/                  # カスタムフォント
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+firestore.rules             # Firestoreセキュリティルール
+storage.rules               # Firebase Storageセキュリティルール
+firebase.json               # Firebase設定
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Flutter + Firebase構成を採用。機能ごとにfeatures/配下でクリーンアーキテクチャを適用し、データ層（Firebase連携）、ドメイン層（ビジネスロジック）、プレゼンテーション層（UI）を分離。Cloud FunctionsはTypeScriptで実装し、AI APIやバックエンドロジックを担当。
 
 ## Complexity Tracking
 
