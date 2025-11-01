@@ -18,6 +18,11 @@
   - Tested independently
   - Deployed independently
   - Demonstrated to users independently
+  
+  CONSTITUTION ALIGNMENT (Principle I & II):
+  - すべてのユーザーストーリーは「モチベーション維持」「孤独感解消」「知識不足解決」のいずれかに貢献すること
+  - P1ストーリーはMVP（Phase 1）で実装可能な範囲に限定すること
+  - 各ストーリーは独立して価値を提供し、Phase間の依存を最小化すること
 -->
 
 ### User Story 1 - [Brief Title] (Priority: P1)
