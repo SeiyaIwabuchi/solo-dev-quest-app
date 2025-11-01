@@ -10,6 +10,10 @@ on:
         required: true
         default: 'v1.0.0'
 
+permissions:
+  contents: write
+  releases: write
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
