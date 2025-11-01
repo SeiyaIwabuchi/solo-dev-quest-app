@@ -20,10 +20,18 @@ description: "Task list template for feature implementation"
 
 ## Path Conventions
 
-- **Single project**: `src/`, `tests/` at repository root
-- **Web app**: `backend/src/`, `frontend/src/`
-- **Mobile**: `api/src/`, `ios/src/` or `android/src/`
-- Paths shown below assume single project - adjust based on plan.md structure
+**Solo Dev Quest App uses Flutter + Firebase Architecture**:
+- **Flutter app**: `lib/features/[feature-name]/` (data, domain, presentation, providers)
+- **Shared code**: `lib/shared/` (widgets, models, services)
+- **Tests**: `test/unit/`, `test/widget/`, `test/integration/`
+- **Cloud Functions**: `functions/src/[module-name]/`
+- **Assets**: `assets/images/`, `assets/animations/`, `assets/fonts/`
+
+**Constitution Alignment**:
+- すべてのタスクは憲法原則（特にPrinciple I, II, III）に準拠すること
+- Firebaseサービス（Auth, Firestore, Functions）を優先的に使用すること
+- RiverpodによるSolo Dev 管理を徹底すること
+- AI機能は抽象化レイヤーを通してCloud Functionsから呼び出すこと
 
 <!-- 
   ============================================================================
@@ -44,56 +52,68 @@ description: "Task list template for feature implementation"
   ============================================================================
 -->
 
-## Phase 1: Setup (Shared Infrastructure)
+## Phase 0: Project Setup (Shared Infrastructure)
 
-**Purpose**: Project initialization and basic structure
+**Purpose**: Flutter + Firebase プロジェクト初期化と基本構造構築
 
-- [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize [language] project with [framework] dependencies
-- [ ] T003 [P] Configure linting and formatting tools
-
----
-
-## Phase 2: Foundational (Blocking Prerequisites)
-
-**Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
-
-**⚠️ CRITICAL**: No user story work can begin until this phase is complete
-
-Examples of foundational tasks (adjust based on your project):
-
-- [ ] T004 Setup database schema and migrations framework
-- [ ] T005 [P] Implement authentication/authorization framework
-- [ ] T006 [P] Setup API routing and middleware structure
-- [ ] T007 Create base models/entities that all stories depend on
-- [ ] T008 Configure error handling and logging infrastructure
-- [ ] T009 Setup environment configuration management
-
-**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+- [ ] T001 Create Flutter project with Riverpod, go_router, freezed dependencies
+- [ ] T002 Initialize Firebase project (Auth, Firestore, Functions, Storage)
+- [ ] T003 [P] Setup Firebase Emulator Suite for local development
+- [ ] T004 [P] Configure analysis_options.yaml (linting, formatting)
+- [ ] T005 [P] Create lib/core/ directory structure (constants, utils, errors, router)
+- [ ] T006 Setup CI/CD with GitHub Actions (Flutter test, build, deploy)
 
 ---
 
-## Phase 3: User Story 1 - [Title] (Priority: P1) 🎯 MVP
+## Phase 1: Foundational (Blocking Prerequisites for MVP)
+
+**Purpose**: MVP（Phase 1）に必須のコアインフラを完成させる
+
+**⚠️ CRITICAL**: このフェーズが完了するまで、ユーザーストーリー実装は開始できない
+
+**Constitution Principle III準拠**: Firebase-First Architecture
+
+- [ ] T007 Setup Firebase Authentication (email/password, Google Sign-In)
+- [ ] T008 [P] Create Firestore security rules基盤（users, tasks, devcoins collections）
+- [ ] T009 [P] Implement base Riverpod providers (authProvider, userProvider)
+- [ ] T010 Create lib/shared/widgets/ common components (AppButton, LoadingOverlay等)
+- [ ] T011 [P] Setup Firebase Cloud Functions基盤（TypeScript + ESLint + Jest）
+- [ ] T012 Implement AI abstraction layer in functions/src/ai/ (Claude + OpenAI fallback)
+- [ ] T013 Setup error handling & logging infrastructure (Crashlytics, structured logs)
+- [ ] T014 Configure go_router with authentication guard
+- [ ] T015 Setup DevCoin経済システムの基本モデル（Firestore schema定義）
+
+**Checkpoint**: MVP基盤完成 - ユーザーストーリー実装を並行開始可能
+
+---
+
+## Phase 2: User Story 1 - [Title] (Priority: P1) 🎯 MVP
 
 **Goal**: [Brief description of what this story delivers]
 
 **Independent Test**: [How to verify this story works on its own]
 
+**Constitution Check**: Principle I（モチベーション維持）、Principle II（MVP-First）への貢献を明記
+
 ### Tests for User Story 1 (OPTIONAL - only if tests requested) ⚠️
 
-> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+> **NOTE: Constitution Principle VI準拠 - Widget Test + Integration Test推奨**
+> **Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T016 [P] [US1] Widget test for [Component] in test/widget/[feature]/[component]_test.dart
+- [ ] T017 [P] [US1] Integration test for [user journey] in test/integration/[feature]/[journey]_test.dart
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
-- [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
-- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
-- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T016 [US1] Add validation and error handling
-- [ ] T017 [US1] Add logging for user story 1 operations
+- [ ] T018 [P] [US1] Create domain models using freezed in lib/features/[feature]/domain/[entity].dart
+- [ ] T019 [P] [US1] Create repository interface in lib/features/[feature]/domain/[repository].dart
+- [ ] T020 [US1] Implement Firebase repository in lib/features/[feature]/data/[repository]_impl.dart
+- [ ] T021 [P] [US1] Create Riverpod providers in lib/features/[feature]/providers/[provider].dart
+- [ ] T022 [US1] Implement presentation layer (screens/widgets) in lib/features/[feature]/presentation/
+- [ ] T023 [US1] Add Firestore security rules for [feature] collections
+- [ ] T024 [US1] (If AI needed) Implement Cloud Function in functions/src/[feature]/[function].ts
+- [ ] T025 [US1] Add error handling & loading states (Riverpod AsyncValue)
+- [ ] T026 [US1] Add Firebase Analytics events for user story tracking
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
