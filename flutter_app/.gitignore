@@ -46,3 +46,17 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+
+# Firebase related
+firebase_options.dart
+google-services.json
+GoogleService-Info.plist
+.env*
+*.env
+
+# Generated files
+*.freezed.dart
+*.g.dart
+
+# Flutter secure storage keys (if any)
+keystore.properties
