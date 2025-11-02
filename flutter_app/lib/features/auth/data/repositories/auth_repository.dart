@@ -211,9 +211,6 @@ class AuthRepository {
   /// 
   /// Calls the checkLoginRateLimit Cloud Function to verify if the user
   /// is allowed to attempt login. Throws [RateLimitException] if locked.
-  /// 
-  /// Note: If Cloud Functions fail for any reason other than rate limiting,
-  /// the error is logged but login is allowed to proceed.
   Future<void> _checkRateLimit(String email) async {
     try {
       final callable = _firebaseFunctions.httpsCallable('checkLoginRateLimit');
@@ -229,11 +226,15 @@ class AuthRepository {
               : DateTime.now().add(Duration(minutes: remainingMinutes)),
         );
       }
-      // Other Firebase Functions errors - log but don't block login
-      print('Cloud Functions error (non-critical): ${e.code} - ${e.message}');
+      throw NetworkException(
+        message: 'Failed to check rate limit: ${e.message}',
+        originalError: e,
+      );
     } catch (e) {
-      // Network or other errors - log but don't block login
-      print('Failed to check rate limit (non-critical): $e');
+      throw NetworkException(
+        message: 'Failed to check rate limit: $e',
+        originalError: e,
+      );
     }
   }
 
