@@ -90,10 +90,13 @@ test/
 
 ### 前提条件
 
-- Flutter 3.x以上
+- Flutter 3.x以上 (3.35.7以上推奨)
+- Dart 3.x以上 (3.9.2以上推奨)
 - Node.js 20 LTS以上
-- Firebase CLI
+- Firebase CLI 13.x以上
 - Git
+- Java (Android開発時)
+- Xcode (iOS開発時)
 
 ### セットアップ手順
 
@@ -103,19 +106,134 @@ git clone https://github.com/[username]/solo-dev-quest-app.git
 cd solo-dev-quest-app
 
 # Flutter依存関係インストール
+cd flutter_app
 flutter pub get
-
-# Firebase Emulator Suiteセットアップ
-cd functions
-npm install
 cd ..
 
-# Firebase Emulatorの起動
+# Firebase Emulator Suiteセットアップ
+cd firebase/functions
+npm install
+cd ../..
+
+# Firebase Emulatorの起動（開発環境）
+cd firebase
 firebase emulators:start
+# または特定のエミュレータのみ起動:
+# firebase emulators:start --only auth,firestore,functions
 
 # アプリ実行（別ターミナル）
+cd flutter_app
 flutter run
+# または特定のデバイスで実行:
+# flutter run -d chrome    # Web
+# flutter run -d macos     # macOS
 ```
+
+### Firebase Emulatorコマンド集
+
+```bash
+# Emulatorの起動（すべてのサービス）
+firebase emulators:start
+
+# 特定のサービスのみ起動
+firebase emulators:start --only auth,firestore
+firebase emulators:start --only functions
+
+# バックグラウンドで起動
+firebase emulators:start &
+
+# Emulator UIの表示（ブラウザ）
+# http://localhost:4000 で自動的に開きます
+
+# データのエクスポート（状態保存）
+firebase emulators:export ./emulator-data
+
+# データのインポート（状態復元）
+firebase emulators:start --import=./emulator-data
+
+# Emulatorの停止
+# Ctrl+C で停止、またはプロセスをkillする
+# バックグラウンド起動時:
+pkill -f "firebase emulators:start"
+
+# Emulatorのログを確認
+# 起動時のターミナルに表示されます
+# または Emulator UI (http://localhost:4000) の Logs タブで確認
+
+# Cloud Functionsの再デプロイ（開発中）
+# Emulatorは自動的にホットリロードしますが、手動で再起動する場合:
+cd firebase/functions
+npm run build
+cd ..
+firebase emulators:start
+```
+
+### 認証機能セットアップ (001-user-auth)
+
+#### 開発環境（Firebase Emulator使用）
+
+開発時は Firebase Emulator を使用するため、Firebase Console での設定は不要です。以下の手順で認証機能をローカルでテストできます:
+
+1. **Firebase Emulatorの起動**
+   ```bash
+   cd firebase
+   firebase emulators:start
+   ```
+   
+   起動後、以下のサービスが利用可能になります:
+   - Authentication Emulator: `http://localhost:9099`
+   - Firestore Emulator: `http://localhost:8080`
+   - Cloud Functions Emulator: `http://localhost:5001`
+   - Emulator UI: `http://localhost:4000`
+
+2. **アプリの実行**
+   ```bash
+   cd flutter_app
+   flutter run
+   ```
+   
+   アプリは自動的にEmulatorに接続します（`lib/main.dart`の`kDebugMode`分岐により自動切り替え）
+
+3. **テストユーザーの作成**
+   - アプリの新規登録画面からテストアカウントを作成
+   - または Emulator UI (`http://localhost:4000`) の Authentication タブから手動作成
+
+4. **認証機能のテスト**
+   - メール/パスワード登録・ログイン
+   - Googleサインイン（Emulator内で動作）
+   - パスワードリセット（Emulator内でリセットメールが表示される）
+   - レート制限（5回失敗で15分ロック）
+   - セッション管理（30日間有効）
+
+#### Emulatorデータの永続化
+
+テストデータを保存して次回起動時に復元する場合:
+
+```bash
+# データエクスポート（Emulator起動中に実行）
+firebase emulators:export ./emulator-data
+
+# 次回起動時にインポート
+firebase emulators:start --import=./emulator-data --export-on-exit
+```
+
+### Firebase本番環境設定（本番リリース時のみ）
+
+開発時はFirebase Emulatorを使用するため不要ですが、本番リリース時に以下を設定してください：
+
+1. **Firebase Authenticationプロバイダー有効化**
+   - [Firebase Console](https://console.firebase.google.com/) → Authentication → Sign-in method
+   - Email/Passwordを有効化
+   - Googleサインインを有効化（サポートメールアドレス設定）
+
+2. **Google Sign-In追加設定**
+   - **Android**: `keytool`でSHA-1フィンガープリント取得 → Firebase Consoleに登録
+   - **iOS**: `GoogleService-Info.plist`のReversed Client IDを`Info.plist`に追加
+
+3. **firebase_options.dartの生成**
+   ```bash
+   flutterfire configure
+   ```
 
 ## 📋 開発ワークフロー
 
