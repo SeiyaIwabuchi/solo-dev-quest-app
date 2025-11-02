@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "929464508407",
+    "project_id": "solo-dev-quest-app",
+    "storage_bucket": "solo-dev-quest-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:929464508407:android:04291aa82d20eae75b18f2",
+        "android_client_info": {
+          "package_name": "com.example.flutter_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD2Z39aPibEAXkfpUfkiwn5psBOoB0pofg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
