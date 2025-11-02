@@ -1,0 +1,98 @@
+name: Release APK Build
+
+on:
+  push:
+    branches: [ production ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+        
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.7'
+        channel: 'stable'
+        
+    - name: Get dependencies
+      run: |
+        cd flutter_app
+        flutter pub get
+        
+    - name: Run tests
+      run: |
+        cd flutter_app
+        flutter test
+        
+    - name: Build APK
+      run: |
+        cd flutter_app
+        flutter build apk --release
+        
+    - name: Get version from pubspec.yaml
+      id: version
+      run: |
+        cd flutter_app
+        VERSION=$(grep '^version:' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+        echo "version=v$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: v$VERSION"
+        
+    - name: Create Release with APK
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.event.inputs.version || steps.version.outputs.version }}
+        name: Release ${{ github.event.inputs.version || steps.version.outputs.version }}
+        body: |
+          ## 🚀 Solo Dev Quest - Release ${{ github.event.inputs.version || steps.version.outputs.version }}
+          
+          ### 📱 ダウンロード
+          - **Android**: APKファイルをダウンロードしてインストール
+          
+          ### ✨ 変更内容
+          - Hello World リリース
+          - 基本的なFlutterアプリケーション
+          
+          ### 🔧 技術情報
+          - Flutter: 3.35.7
+          - Dart: 対応バージョン
+          - 対象OS: Android 5.0+ (API level 21+)
+          
+          ---
+          
+          **Installation**: APKファイルをダウンロードし、Android端末にインストールしてください。
+          **Note**: 初回インストール時は「不明なアプリのインストール」を許可する必要があります。
+        files: |
+          flutter_app/build/app/outputs/flutter-apk/app-release.apk
+        draft: false
+        prerelease: false
+
+  notify-success:
+    runs-on: ubuntu-latest
+    needs: build-apk
+    if: success()
+    steps:
+    - name: Success notification
+      run: |
+        echo "✅ Release build completed successfully!"
+        echo "🔗 Check the release at: ${{ github.server_url }}/${{ github.repository }}/releases"
