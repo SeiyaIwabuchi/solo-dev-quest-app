@@ -81,17 +81,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         LoadingOverlay.hide(context);
       }
 
-      // ログイン成功 - ホーム画面へ遷移
+      // ログイン成功
+      // 注: AuthWrapperが自動的にホーム画面に遷移するため、手動遷移は不要
       if (mounted) {
-        // TODO: 実際のホーム画面が実装されたらNavigator.pushReplacementに変更
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('ログインしました'),
             backgroundColor: Colors.green,
           ),
         );
-        // 暫定的に前の画面に戻る（後でホーム画面遷移に変更）
-        Navigator.of(context).pop();
       }
     } on RateLimitException catch (e) {
       // Hide loading overlay
@@ -257,17 +255,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         return;
       }
 
-      // ログイン成功 - ホーム画面へ遷移
+      // ログイン成功
+      // 注: AuthWrapperが自動的にホーム画面に遷移するため、手動遷移は不要
       if (mounted) {
-        // TODO: 実際のホーム画面が実装されたらNavigator.pushReplacementに変更
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Googleアカウントでログインしました'),
             backgroundColor: Colors.green,
           ),
         );
-        // 暫定的に前の画面に戻る（後でホーム画面遷移に変更）
-        Navigator.of(context).pop();
       }
     } on NetworkException catch (e) {
       // Hide loading overlay
