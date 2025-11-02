@@ -9,7 +9,7 @@
 
 import * as admin from "firebase-admin";
 import {setGlobalOptions} from "firebase-functions/v2";
-import {onCall, HttpsError, CallableRequest} from "firebase-functions/v2/https";
+import {onRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 
 // Initialize Firebase Admin SDK
@@ -31,28 +31,10 @@ setGlobalOptions({maxInstances: 10});
 // Type Definitions
 // ========================
 
-interface CheckLoginRateLimitRequest {
-  email: string;
-}
-
-interface CheckLoginRateLimitResponse {
-  allowed: boolean;
-}
-
 interface LoginLockData {
   failedAttempts: number;
   lastAttemptAt: admin.firestore.Timestamp;
   lockedUntil?: admin.firestore.Timestamp;
-}
-
-interface RecordLoginAttemptRequest {
-  email: string;
-  success: boolean;
-}
-
-interface RecordLoginAttemptResponse {
-  recorded: boolean;
-  failedAttempts?: number;
 }
 
 // ========================
@@ -65,71 +47,100 @@ interface RecordLoginAttemptResponse {
  * ログイン試行前にレート制限をチェック。
  * ロック中の場合はエラーを返す。
  *
- * @param request.data.email - ログイン試行するメールアドレス
+ * HTTP関数として実装（未認証ユーザーからの呼び出しに対応）
+ *
+ * @param request.body.email - ログイン試行するメールアドレス
  * @returns {allowed: true} ログイン試行が許可された
- * @throws {HttpsError} ロック中の場合
+ * @returns {error, details} ロック中の場合
  */
-export const checkLoginRateLimit = onCall(
-  {region: "asia-northeast1"},
-  async (
-    request: CallableRequest<CheckLoginRateLimitRequest>
-  ): Promise<CheckLoginRateLimitResponse> => {
-    const {email} = request.data;
+export const checkLoginRateLimit = onRequest(
+  {
+    region: "asia-northeast1",
+    cors: true,
+  },
+  async (request, response) => {
+    // CORS preflight
+    if (request.method === "OPTIONS") {
+      response.status(204).send("");
+      return;
+    }
+
+    // POST メソッドのみ許可
+    if (request.method !== "POST") {
+      response.status(405).json({error: "Method not allowed"});
+      return;
+    }
+
+    const {email} = request.body;
 
     // 入力検証
     if (!email || typeof email !== "string") {
-      throw new HttpsError(
-        "invalid-argument",
-        "メールアドレスが必要です"
-      );
-    }
-
-    const lockRef = admin.firestore().collection("login_locks").doc(email);
-    const lockDoc = await lockRef.get();
-
-    if (!lockDoc.exists) {
-      // ロックレコードなし → 許可
-      return {allowed: true};
-    }
-
-    const lockData = lockDoc.data() as LoginLockData;
-    const now = new Date();
-
-    // ロック期間チェック
-    if (lockData.lockedUntil && lockData.lockedUntil.toDate() > now) {
-      const remainingMs =
-        lockData.lockedUntil.toDate().getTime() - now.getTime();
-      const remainingMinutes = Math.ceil(remainingMs / 60000);
-
-      throw new HttpsError(
-        "permission-denied",
-        "セキュリティ上の理由により一時的にログインできません。15分後に再試行してください",
-        {
-          lockedUntil: lockData.lockedUntil.toDate().toISOString(),
-          remainingMinutes,
-        }
-      );
-    }
-
-    // 5回失敗チェック
-    if (lockData.failedAttempts >= 5) {
-      const lockedUntil = new Date(now.getTime() + 15 * 60 * 1000);
-
-      await lockRef.update({
-        lockedUntil: admin.firestore.Timestamp.fromDate(lockedUntil),
+      response.status(400).json({
+        error: "invalid-argument",
+        message: "メールアドレスが必要です",
       });
-
-      throw new HttpsError(
-        "permission-denied",
-        "ログイン試行回数が上限に達しました。15分後に再試行してください",
-        {
-          lockedUntil: lockedUntil.toISOString(),
-          remainingMinutes: 15,
-        }
-      );
+      return;
     }
 
-    return {allowed: true};
+    try {
+      const lockRef = admin.firestore().collection("login_locks").doc(email);
+      const lockDoc = await lockRef.get();
+
+      if (!lockDoc.exists) {
+        // ロックレコードなし → 許可
+        response.status(200).json({allowed: true});
+        return;
+      }
+
+      const lockData = lockDoc.data() as LoginLockData;
+      const now = new Date();
+
+      // ロック期間チェック
+      if (lockData.lockedUntil && lockData.lockedUntil.toDate() > now) {
+        const remainingMs =
+          lockData.lockedUntil.toDate().getTime() - now.getTime();
+        const remainingMinutes = Math.ceil(remainingMs / 60000);
+
+        response.status(403).json({
+          error: "permission-denied",
+          message:
+            "セキュリティ上の理由により一時的にログインできません。15分後に再試行してください",
+          details: {
+            lockedUntil: lockData.lockedUntil.toDate().toISOString(),
+            remainingMinutes,
+          },
+        });
+        return;
+      }
+
+      // 5回失敗チェック
+      if (lockData.failedAttempts >= 5) {
+        const lockedUntil = new Date(now.getTime() + 15 * 60 * 1000);
+
+        await lockRef.update({
+          lockedUntil: admin.firestore.Timestamp.fromDate(lockedUntil),
+        });
+
+        response.status(403).json({
+          error: "permission-denied",
+          message:
+            "ログイン試行回数が上限に達しました。15分後に再試行してください",
+          details: {
+            lockedUntil: lockedUntil.toISOString(),
+            remainingMinutes: 15,
+          },
+        });
+        return;
+      }
+
+      response.status(200).json({allowed: true});
+    } catch (error) {
+      console.error("Error checking rate limit:", error);
+      response.status(500).json({
+        error: "internal",
+        message: "Internal server error",
+      });
+    }
   }
 );
 
@@ -187,55 +198,81 @@ export const cleanupExpiredLocks = onSchedule(
  * ログイン試行結果を記録。
  * 成功時はカウントリセット、失敗時はカウント増加。
  *
- * @param request.data.email - ログイン試行したメールアドレス
- * @param request.data.success - ログイン成功=true, 失敗=false
+ * HTTP関数として実装（未認証ユーザーからの呼び出しに対応）
+ *
+ * @param request.body.email - ログイン試行したメールアドレス
+ * @param request.body.success - ログイン成功=true, 失敗=false
  * @returns {recorded: true, failedAttempts?: number} 記録完了
- * @throws {HttpsError} 不正な入力の場合
  */
-export const recordLoginAttempt = onCall(
-  {region: "asia-northeast1"},
-  async (
-    request: CallableRequest<RecordLoginAttemptRequest>
-  ): Promise<RecordLoginAttemptResponse> => {
-    const {email, success} = request.data;
+export const recordLoginAttempt = onRequest(
+  {
+    region: "asia-northeast1",
+    cors: true,
+  },
+  async (request, response) => {
+    // CORS preflight
+    if (request.method === "OPTIONS") {
+      response.status(204).send("");
+      return;
+    }
+
+    // POST メソッドのみ許可
+    if (request.method !== "POST") {
+      response.status(405).json({error: "Method not allowed"});
+      return;
+    }
+
+    const {email, success} = request.body;
 
     // 入力検証
     if (!email || typeof email !== "string") {
-      throw new HttpsError(
-        "invalid-argument",
-        "メールアドレスが必要です"
-      );
+      response.status(400).json({
+        error: "invalid-argument",
+        message: "メールアドレスが必要です",
+      });
+      return;
     }
 
     if (typeof success !== "boolean") {
-      throw new HttpsError(
-        "invalid-argument",
-        "success フラグが必要です"
-      );
+      response.status(400).json({
+        error: "invalid-argument",
+        message: "success フラグが必要です",
+      });
+      return;
     }
 
-    const lockRef = admin.firestore().collection("login_locks").doc(email);
+    try {
+      const lockRef = admin.firestore().collection("login_locks").doc(email);
 
-    if (success) {
-      // ログイン成功 → カウントリセット
-      await lockRef.delete();
-      return {recorded: true};
-    } else {
-      // ログイン失敗 → カウント増加
-      const lockDoc = await lockRef.get();
-      const currentAttempts = lockDoc.exists ?
-        (lockDoc.data()?.failedAttempts || 0) :
-        0;
+      if (success) {
+        // ログイン成功 → カウントリセット
+        await lockRef.delete();
+        response.status(200).json({recorded: true});
+        return;
+      } else {
+        // ログイン失敗 → カウント増加
+        const lockDoc = await lockRef.get();
+        const currentAttempts = lockDoc.exists ?
+          (lockDoc.data()?.failedAttempts || 0) :
+          0;
 
-      await lockRef.set({
-        failedAttempts: currentAttempts + 1,
-        lastAttemptAt: admin.firestore.FieldValue.serverTimestamp(),
-      }, {merge: true});
+        await lockRef.set({
+          failedAttempts: currentAttempts + 1,
+          lastAttemptAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, {merge: true});
 
-      return {
-        recorded: true,
-        failedAttempts: currentAttempts + 1,
-      };
+        response.status(200).json({
+          recorded: true,
+          failedAttempts: currentAttempts + 1,
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Error recording login attempt:", error);
+      response.status(500).json({
+        error: "internal",
+        message: "Internal server error",
+      });
     }
   }
 );

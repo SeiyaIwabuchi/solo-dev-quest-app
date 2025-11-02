@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../../../core/errors/auth_exceptions.dart';
 import '../../../../core/utils/validators.dart';
-import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/error_dialog.dart';
 import 'password_reset_screen.dart';
 import 'register_screen.dart';
@@ -64,11 +63,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _isLoading = true;
     });
 
-    // Show loading overlay
-    if (mounted) {
-      LoadingOverlay.show(context, message: 'ログイン中...');
-    }
-
     try {
       final authRepository = ref.read(authRepositoryProvider);
       await authRepository.signInWithEmailPassword(
@@ -76,35 +70,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         password: _passwordController.text,
       );
 
-      // Hide loading overlay
+      // ログイン成功
+      // 注: AuthWrapperが自動的にホーム画面に遷移するため、手動遷移は不要
       if (mounted) {
-        LoadingOverlay.hide(context);
-      }
-
-      // ログイン成功 - ホーム画面へ遷移
-      if (mounted) {
-        // TODO: 実際のホーム画面が実装されたらNavigator.pushReplacementに変更
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('ログインしました'),
             backgroundColor: Colors.green,
           ),
         );
-        // 暫定的に前の画面に戻る（後でホーム画面遷移に変更）
-        Navigator.of(context).pop();
       }
     } on RateLimitException catch (e) {
-      // Hide loading overlay
-      if (mounted) {
-        LoadingOverlay.hide(context);
-      }
       // レート制限エラー - 特別な処理
       _showRateLimitError(e);
     } on UserNotFoundException {
-      // Hide loading overlay
-      if (mounted) {
-        LoadingOverlay.hide(context);
-      }
       if (mounted) {
         await ErrorDialog.showAuthError(
           context: context,
@@ -112,10 +91,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
       }
     } on InvalidCredentialsException {
-      // Hide loading overlay
-      if (mounted) {
-        LoadingOverlay.hide(context);
-      }
       if (mounted) {
         await ErrorDialog.showAuthError(
           context: context,
@@ -123,10 +98,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
       }
     } on NetworkException {
-      // Hide loading overlay
-      if (mounted) {
-        LoadingOverlay.hide(context);
-      }
       if (mounted) {
         await ErrorDialog.showNetworkError(
           context: context,
@@ -134,10 +105,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
       }
     } on AuthException catch (e) {
-      // Hide loading overlay
-      if (mounted) {
-        LoadingOverlay.hide(context);
-      }
       if (mounted) {
         await ErrorDialog.showAuthError(
           context: context,
@@ -145,10 +112,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
       }
     } catch (e) {
-      // Hide loading overlay
-      if (mounted) {
-        LoadingOverlay.hide(context);
-      }
       if (mounted) {
         await ErrorDialog.show(
           context: context,
@@ -237,19 +200,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _isLoading = true;
     });
 
-    // Show loading overlay
-    if (mounted) {
-      LoadingOverlay.show(context, message: 'Googleアカウントで認証中...');
-    }
-
     try {
       final authRepository = ref.read(authRepositoryProvider);
       final user = await authRepository.signInWithGoogle();
-
-      // Hide loading overlay
-      if (mounted) {
-        LoadingOverlay.hide(context);
-      }
 
       // ユーザーがキャンセルした場合
       if (user == null) {
@@ -257,23 +210,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         return;
       }
 
-      // ログイン成功 - ホーム画面へ遷移
+      // ログイン成功
+      // 注: AuthWrapperが自動的にホーム画面に遷移するため、手動遷移は不要
       if (mounted) {
-        // TODO: 実際のホーム画面が実装されたらNavigator.pushReplacementに変更
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Googleアカウントでログインしました'),
             backgroundColor: Colors.green,
           ),
         );
-        // 暫定的に前の画面に戻る（後でホーム画面遷移に変更）
-        Navigator.of(context).pop();
       }
     } on NetworkException catch (e) {
-      // Hide loading overlay
-      if (mounted) {
-        LoadingOverlay.hide(context);
-      }
       // T061: Googleサービス障害時のフォールバックメッセージ
       if (mounted) {
         await ErrorDialog.show(
@@ -283,10 +230,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
       }
     } on AuthException catch (e) {
-      // Hide loading overlay
-      if (mounted) {
-        LoadingOverlay.hide(context);
-      }
       if (mounted) {
         await ErrorDialog.showAuthError(
           context: context,
@@ -294,10 +237,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
       }
     } catch (e) {
-      // Hide loading overlay
-      if (mounted) {
-        LoadingOverlay.hide(context);
-      }
       if (mounted) {
         await ErrorDialog.show(
           context: context,
@@ -316,16 +255,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('ログイン'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            title: const Text('ログイン'),
+          ),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 32),
@@ -508,6 +449,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ),
+        ),
+        // ローディングオーバーレイ
+        if (_isLoading)
+          Container(
+            color: Colors.black54,
+            child: const Center(
+              child: Card(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('認証中...'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

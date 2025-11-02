@@ -124,7 +124,140 @@ cat .firebaserc
    - ログイン
    - データ保存
 
+## Cloud Functions デプロイ (Blaze プラン)
+
+### HTTP関数 vs Callable関数の選択
+
+#### Callable Functions (`onCall`)
+- **用途**: 認証済みユーザー専用の機能
+- **特徴**:
+  - Firebase Authentication トークンが自動的に付与される
+  - `request.auth` で認証情報にアクセス可能
+  - Flutter側は `FirebaseFunctions.httpsCallable()` で呼び出し
+- **適用例**: ユーザープロフィール更新、課金処理、プライベートデータ操作
+
+#### HTTP Functions (`onRequest`)
+- **用途**: 未認証ユーザーからのアクセスが必要な機能
+- **特徴**:
+  - 認証トークン不要
+  - 標準的なHTTPリクエスト/レスポンス
+  - Flutter側は `http.post()` で呼び出し
+  - IAM権限設定が必須
+- **適用例**: ログイン前のレート制限チェック、パブリックAPI、Webhook
+
+### ⚠️ 重要: Callable関数での認証エラー
+
+**問題**: ログイン前のユーザーがCallable関数を呼ぶと `unavailable` エラーが発生
+
+**原因**: 
+- Callable関数はFirebase Authentication トークンを前提としている
+- ログイン前のユーザーは未認証なのでトークンが存在しない
+- Cloud Functions側で認証トークンの検証に失敗
+
+**解決策**: 
+ログイン前に呼び出す必要がある関数（レート制限チェックなど）は、**HTTP関数で実装**する
+
+```typescript
+// ❌ ログイン前には使えない
+export const checkLoginRateLimit = onCall({region: "asia-northeast1"}, async (request) => {
+  // request.auth は undefined になる
+});
+
+// ✅ ログイン前でも使える
+export const checkLoginRateLimit = onRequest({region: "asia-northeast1", cors: true}, async (request, response) => {
+  // HTTPリクエストとして処理
+});
+```
+
+### HTTP関数のIAM権限設定
+
+HTTP関数デプロイ後、未認証ユーザーからの呼び出しを許可するため、IAM権限の設定が必須です。
+
+```bash
+# Cloud Runサービス名を確認（関数名は小文字に変換される）
+gcloud run services list --region=asia-northeast1 --project=
+
+# allUsersにinvoker権限を付与
+gcloud run services add-iam-policy-binding <service-name> \
+  --region=asia-northeast1 \
+  --member="allUsers" \
+  --role="roles/run.invoker" \
+  --project=
+```
+
+**例**:
+```bash
+gcloud run services add-iam-policy-binding checkloginratelimit \
+  --region=asia-northeast1 \
+  --member="allUsers" \
+  --role="roles/run.invoker" \
+  --project=
+```
+
+### デプロイ手順
+
+1. **関数の実装** (`firebase/functions/src/index.ts`)
+2. **デプロイ**:
+   ```bash
+   cd firebase
+   firebase deploy --only functions
+   ```
+3. **IAM権限設定** (HTTP関数の場合):
+   ```bash
+   gcloud run services add-iam-policy-binding <service-name> \
+     --region=asia-northeast1 \
+     --member="allUsers" \
+     --role="roles/run.invoker" \
+     --project=
+   ```
+
+### Flutter側の実装
+
+#### Callable関数の場合
+```dart
+final callable = FirebaseFunctions.instanceFor(region: 'asia-northeast1')
+    .httpsCallable('functionName');
+await callable.call({'param': 'value'});
+```
+
+#### HTTP関数の場合
+```dart
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+final response = await http.post(
+  Uri.parse('https://asia-northeast1-.cloudfunctions.net/functionName'),
+  headers: {'Content-Type': 'application/json'},
+  body: json.encode({'param': 'value'}),
+);
+
+if (response.statusCode == 200) {
+  final data = json.decode(response.body);
+  // 処理
+}
+```
+
+### トラブルシューティング
+
+#### `unavailable` エラー
+- **原因**: Callable関数を未認証ユーザーが呼び出そうとしている
+- **解決**: HTTP関数に変更
+
+#### `not-found` エラー
+- **原因**: 関数がデプロイされていない、またはリージョンが違う
+- **確認**: `firebase functions:list` でデプロイ状況を確認
+
+#### 認証エラー (HTTP関数)
+- **原因**: IAM権限が設定されていない
+- **解決**: `gcloud run services add-iam-policy-binding` で権限付与
+
+#### DNS lookup 失敗
+- **原因**: デバイスのネットワーク接続問題
+- **解決**: エミュレータ/実機を再起動、ネットワーク設定を確認
+
 ## 参考
 
 - [Firebase CLI Reference](https://firebase.google.com/docs/cli)
 - [GitHub Actions Documentation](https://docs.github.com/actions)
+- [Cloud Functions: Callable vs HTTP](https://firebase.google.com/docs/functions/callable)
+- [Cloud Run IAM permissions](https://cloud.google.com/run/docs/securing/managing-access-iam)
