@@ -1,0 +1,18 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection - 自分のプロフィールのみ読み書き可能
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && request.auth.uid == uid;
+      allow delete: if false; // Phase 0では削除不可
+    }
+
+    // Login locks collection - Cloud Functionsのみアクセス可能
+    match /login_locks/{email} {
+      allow read, write: if false;
+    }
+  }
+}
