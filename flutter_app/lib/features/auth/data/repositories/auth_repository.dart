@@ -42,7 +42,7 @@ class AuthRepository {
     SecureStorageService? secureStorage,
   })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
         _googleSignIn = googleSignIn ?? GoogleSignIn(),
-        _firebaseFunctions = firebaseFunctions ?? FirebaseFunctions.instance,
+        _firebaseFunctions = firebaseFunctions ?? FirebaseFunctions.instanceFor(region: 'asia-northeast1'),
         _firebaseFirestore = firebaseFirestore ?? FirebaseFirestore.instance,
         _secureStorage = secureStorage ?? SecureStorageService();
 
