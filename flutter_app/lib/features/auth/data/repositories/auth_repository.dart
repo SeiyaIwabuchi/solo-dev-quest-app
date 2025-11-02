@@ -1,8 +1,10 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
 import '../../../../core/errors/auth_exceptions.dart';
 import '../../../../core/services/secure_storage_service.dart';
 
@@ -21,9 +23,6 @@ class AuthRepository {
   /// Google Sign-In instance
   final GoogleSignIn _googleSignIn;
   
-  /// Firebase Functions instance for Cloud Functions calls
-  final FirebaseFunctions _firebaseFunctions;
-  
   /// Cloud Firestore instance for user profile management
   final FirebaseFirestore _firebaseFirestore;
 
@@ -37,12 +36,10 @@ class AuthRepository {
   AuthRepository({
     FirebaseAuth? firebaseAuth,
     GoogleSignIn? googleSignIn,
-    FirebaseFunctions? firebaseFunctions,
     FirebaseFirestore? firebaseFirestore,
     SecureStorageService? secureStorage,
   })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
         _googleSignIn = googleSignIn ?? GoogleSignIn(),
-        _firebaseFunctions = firebaseFunctions ?? FirebaseFunctions.instanceFor(region: 'asia-northeast1'),
         _firebaseFirestore = firebaseFirestore ?? FirebaseFirestore.instance,
         _secureStorage = secureStorage ?? SecureStorageService();
 
@@ -207,30 +204,45 @@ class AuthRepository {
     }
   }
 
-  /// Checks login rate limit via Cloud Functions
+  /// Checks login rate limit via Cloud Functions (HTTP)
   /// 
-  /// Calls the checkLoginRateLimit Cloud Function to verify if the user
+  /// Calls the checkLoginRateLimit HTTP Function to verify if the user
   /// is allowed to attempt login. Throws [RateLimitException] if locked.
   Future<void> _checkRateLimit(String email) async {
     try {
-      final callable = _firebaseFunctions.httpsCallable('checkLoginRateLimit');
-      await callable.call({'email': email});
-    } on FirebaseFunctionsException catch (e) {
-      if (e.code == 'permission-denied') {
-        final details = e.details as Map<String, dynamic>?;
+      final response = await http.post(
+        Uri.parse(
+            'https://asia-northeast1-solo-dev-quest-app.cloudfunctions.net/checkLoginRateLimit'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email}),
+      );
+
+      if (response.statusCode == 200) {
+        // Rate limit check passed
+        return;
+      }
+
+      final data = json.decode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 403 && data['error'] == 'permission-denied') {
+        final details = data['details'] as Map<String, dynamic>?;
         final remainingMinutes = details?['remainingMinutes'] as int? ?? 15;
         throw RateLimitException(
-          message: e.message ?? 'Too many login attempts. Please try again later',
+          message: data['message'] ??
+              'Too many login attempts. Please try again later',
           lockedUntil: details?['lockedUntil'] != null
               ? DateTime.parse(details!['lockedUntil'] as String)
               : DateTime.now().add(Duration(minutes: remainingMinutes)),
         );
       }
+
       throw NetworkException(
-        message: 'Failed to check rate limit: ${e.message}',
-        originalError: e,
+        message: 'Failed to check rate limit: ${data['message'] ?? 'Unknown error'}',
       );
     } catch (e) {
+      if (e is RateLimitException) {
+        rethrow;
+      }
       throw NetworkException(
         message: 'Failed to check rate limit: $e',
         originalError: e,
@@ -238,23 +250,26 @@ class AuthRepository {
     }
   }
 
-  /// Records a login attempt via Cloud Functions
+  /// Records a login attempt via Cloud Functions (HTTP)
   /// 
-  /// Calls the recordLoginAttempt Cloud Function to track successful
+  /// Calls the recordLoginAttempt HTTP Function to track successful
   /// and failed login attempts for rate limiting purposes.
   Future<void> _recordLoginAttempt({
     required String email,
     required bool success,
   }) async {
     try {
-      final callable = _firebaseFunctions.httpsCallable('recordLoginAttempt');
-      await callable.call({
-        'email': email,
-        'success': success,
-      });
+      await http.post(
+        Uri.parse(
+            'https://asia-northeast1-solo-dev-quest-app.cloudfunctions.net/recordLoginAttempt'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'success': success,
+        }),
+      );
     } catch (e) {
-      // Don't throw on recording failure to avoid blocking user flow
-      // Just log the error (in production, use proper logging)
+      // ログイン試行の記録失敗はエラーとして扱わない（ログに記録のみ）
       print('Failed to record login attempt: $e');
     }
   }
