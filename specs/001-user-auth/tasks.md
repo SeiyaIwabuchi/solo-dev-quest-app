@@ -22,19 +22,19 @@
 
 ### Tasks
 
-- [ ] T001 Flutter pubspec.yamlにdependencies追加 (firebase_core, firebase_auth, cloud_firestore, cloud_functions, google_sign_in, flutter_secure_storage, flutter_riverpod, freezed_annotation, json_annotation)
-- [ ] T002 Flutter pubspec.yamlにdev_dependencies追加 (build_runner, freezed, json_serializable, mockito)
-- [ ] T003 Firebase CLIでプロジェクト初期化 `firebase init` (Authentication, Firestore, Functions選択)
-- [ ] T004 FlutterFire CLI実行 `flutterfire configure` でfirebase_options.dart生成
-- [ ] T005 [P] lib/core/constants/ディレクトリ作成
-- [ ] T006 [P] lib/core/utils/ディレクトリ作成
-- [ ] T007 [P] lib/core/errors/ディレクトリ作成
-- [ ] T008 [P] lib/features/auth/data/ディレクトリ作成
-- [ ] T009 [P] lib/features/auth/domain/ディレクトリ作成
-- [ ] T010 [P] lib/features/auth/presentation/ディレクトリ作成
-- [ ] T011 [P] lib/features/auth/providers/ディレクトリ作成
-- [ ] T012 [P] functions/src/ディレクトリ作成
-- [ ] T013 lib/main.dartにFirebase初期化コード追加 (Firebase.initializeApp with DefaultFirebaseOptions)
+- [x] T001 Flutter pubspec.yamlにdependencies追加 (firebase_core, firebase_auth, cloud_firestore, cloud_functions, google_sign_in, flutter_secure_storage, flutter_riverpod, freezed_annotation, json_annotation)
+- [x] T002 Flutter pubspec.yamlにdev_dependencies追加 (build_runner, freezed, json_serializable, mockito)
+- [x] T003 Firebase CLIでプロジェクト初期化 `firebase init` (Authentication, Firestore, Functions選択)
+- [x] T004 FlutterFire CLI実行 `flutterfire configure` でfirebase_options.dart生成
+- [x] T005 [P] lib/core/constants/ディレクトリ作成
+- [x] T006 [P] lib/core/utils/ディレクトリ作成
+- [x] T007 [P] lib/core/errors/ディレクトリ作成
+- [x] T008 [P] lib/features/auth/data/ディレクトリ作成
+- [x] T009 [P] lib/features/auth/domain/ディレクトリ作成
+- [x] T010 [P] lib/features/auth/presentation/ディレクトリ作成
+- [x] T011 [P] lib/features/auth/providers/ディレクトリ作成
+- [x] T012 [P] functions/src/ディレクトリ作成
+- [x] T013 lib/main.dartにFirebase初期化コード追加 (Firebase.initializeApp with DefaultFirebaseOptions)
 
 ---
 
