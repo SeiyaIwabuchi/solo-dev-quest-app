@@ -81,15 +81,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         LoadingOverlay.hide(context);
       }
 
-      // 登録成功
-      // 注: AuthWrapperが自動的にホーム画面に遷移するため、手動遷移は不要
+      // 登録成功 - ホーム画面へ遷移
       if (mounted) {
+        // TODO: 実際のホーム画面が実装されたらNavigator.pushReplacementに変更
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('登録が完了しました'),
             backgroundColor: Colors.green,
           ),
         );
+        // 暫定的に前の画面に戻る（後でホーム画面遷移に変更）
+        Navigator.of(context).pop();
       }
     } on WeakPasswordException catch (e) {
       // Hide loading overlay
