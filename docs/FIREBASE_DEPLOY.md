@@ -7,29 +7,36 @@
 
 ## セットアップ手順
 
-### 1. Firebase CIトークンの取得
+### 1. サービスアカウントの作成
 
-ローカル環境で以下のコマンドを実行：
+1. [Firebase Console](https://console.firebase.google.com/)にアクセス
+2. プロジェクト（`solo-dev-quest-app`）を選択
+3. ⚙️（設定） → **プロジェクトの設定** → **サービス アカウント** タブ
+4. **新しい秘密鍵の生成** をクリック
+5. **キーを生成** をクリック
+6. JSONファイルがダウンロードされます
 
-```bash
-firebase login:ci
-```
+⚠️ **重要**: このJSONファイルは機密情報です。絶対にGitにコミットしないでください。
 
-実行後：
-1. ブラウザが開き、Googleアカウントでのログインを求められます
-2. 認証後、ターミナルにトークンが表示されます
-3. このトークンをコピー
+### 2. サービスアカウントに権限を付与
 
-⚠️ **重要**: このトークンは機密情報です。絶対にGitにコミットしないでください。
+1. [Google Cloud Console](https://console.cloud.google.com/)にアクセス
+2. プロジェクト（`solo-dev-quest-app`）を選択
+3. **IAMと管理** → **IAM**
+4. サービスアカウント（`firebase-adminsdk-...@solo-dev-quest-app.iam.gserviceaccount.com`）を探す
+5. 編集（鉛筆アイコン）をクリック
+6. ロールを追加：
+   - **Firebase Rules Admin** または **Cloud Datastore Owner**
+7. **保存**
 
-### 2. GitHub Secretsへの登録
+### 3. GitHub Secretsへの登録
 
 1. GitHubリポジトリページ → **Settings**
 2. **Secrets and variables** → **Actions**
 3. **New repository secret** をクリック
 4. 入力：
-   - Name: `FIREBASE_TOKEN`
-   - Secret: コピーしたトークン
+   - Name: `GOOGLE_APPLICATION_CREDENTIALS`
+   - Secret: ダウンロードしたJSONファイルの**内容全体**をコピー＆ペースト
 5. **Add secret** をクリック
 
 ### 3. デプロイの実行
@@ -68,15 +75,21 @@ firebase deploy --only firestore:rules
 
 ## トラブルシューティング
 
-### トークンエラー
-```bash
-# 新しいトークンを取得
-firebase login:ci
-# GitHub Secretsを更新
-```
+### 認証エラー
+サービスアカウントのJSON形式が正しいか確認してください：
+- JSONファイル全体をコピーしているか
+- 余分な改行やスペースが入っていないか
 
-### 権限不足
-Firebaseプロジェクトで適切な権限（Editor以上）が必要です。
+### 権限不足エラー
+サービスアカウントに以下のロールが付与されているか確認：
+- **Firebase Rules Admin** または
+- **Cloud Datastore Owner**
+
+### API有効化エラー
+```
+Error: firestore.googleapis.com is not enabled
+```
+→ Firebase Consoleで Firestore Database を有効化してください
 
 ### プロジェクトID確認
 ```bash
