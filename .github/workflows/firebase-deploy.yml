@@ -49,3 +49,42 @@ jobs:
           echo "🎉 Deployment completed successfully!"
           echo ""
           echo "Note: Cloud Functions are not deployed (Spark plan limitation)"
+
+      - name: Discord notification - Success
+        if: success()
+        uses: tsickert/discord-webhook@v6.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          username: "Solo Dev Quest Bot"
+          avatar-url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+          embed-title: "🔥 Firebaseデプロイ完了"
+          embed-description: |
+            **Solo Dev Quest** のFirestoreルールがデプロイされました。
+            
+            **ブランチ**: `${{ github.ref_name }}`
+            **コミット**: `${{ github.sha }}`
+            **トリガー**: ${{ github.event_name }}
+          embed-color: 15105570
+          embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          embed-footer-text: "GitHub Actions"
+          embed-timestamp: ""
+
+      - name: Discord notification - Failure
+        if: failure()
+        uses: tsickert/discord-webhook@v6.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          username: "Solo Dev Quest Bot"
+          avatar-url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+          embed-title: "❌ Firebaseデプロイ失敗"
+          embed-description: |
+            **Solo Dev Quest** のFirestoreルールのデプロイが失敗しました。
+            
+            **ブランチ**: `${{ github.ref_name }}`
+            **コミット**: `${{ github.sha }}`
+            
+            詳細はワークフローログを確認してください。
+          embed-color: 15158332
+          embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          embed-footer-text: "GitHub Actions"
+          embed-timestamp: ""

@@ -1,0 +1,44 @@
+# Compiled JavaScript files
+lib/
+*.js.map
+
+# Node modules
+node_modules/
+
+# Build artifacts
+dist/
+build/
+
+# Coverage
+coverage/
+*.lcov
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+*.test.js
+*.spec.js
+
+# Temporary files
+*.tmp
+*.temp
