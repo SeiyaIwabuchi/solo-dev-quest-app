@@ -38,19 +38,43 @@ fvm dart --version     # 3.9.2以上
 
 ---
 
-## テスト実行手順
+## 実行手順
 
-### Step 1: Firebase Emulatorの起動
+### 1. Firebase Emulatorの起動（テスト用ルールで）
 
-**ターミナル1** (Emulator実行用):
+統合テストでは、認証されたユーザーがすべてのコレクションにアクセスできる緩和されたルールを使用します。
 
+**推奨方法（スクリプトを使用）**:
 ```bash
-cd firebase
-firebase emulators:start
+cd firebase/scripts
+./test-emulator.sh
 ```
 
-Emulatorが起動すると、以下のようなメッセージが表示されます:
+このスクリプトは:
+- ✅ 自動的に本番用ルールをバックアップ
+- ✅ テスト用ルールに切り替え
+- ✅ Emulatorを起動
+- ✅ 終了時（Ctrl+C）に自動的に本番用ルールを復元
 
+**手動で実行する場合**:
+```bash
+cd firebase
+# 本番用ルールをバックアップ（初回のみ）
+cp firestore.rules firestore.rules.production
+
+# テスト用ルールに切り替え
+cp firestore.rules.test firestore.rules
+
+# Emulatorを起動
+firebase emulators:start --only auth,firestore
+```
+
+**⚠️ 重要**: 手動実行の場合、テスト完了後は必ず本番用ルールに戻してください:
+```bash
+cp firestore.rules.production firestore.rules
+```
+
+Emulatorが起動したら、別のターミナルでテストを実行してください。
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ ✔  All emulators ready! It is now safe to connect your app. │
