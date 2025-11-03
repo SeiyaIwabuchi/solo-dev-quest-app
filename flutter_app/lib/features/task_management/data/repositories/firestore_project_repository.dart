@@ -138,7 +138,13 @@ class FirestoreProjectRepository implements IProjectRepository {
 
   @override
   Future<bool> exists({required String projectId}) async {
-    final doc = await _projectsCollection.doc(projectId).get();
+    // オフライン対応: キャッシュから取得を優先
+    DocumentSnapshot doc;
+    try {
+      doc = await _projectsCollection.doc(projectId).get(const GetOptions(source: Source.cache));
+    } catch (_) {
+      doc = await _projectsCollection.doc(projectId).get();
+    }
     return doc.exists;
   }
 
