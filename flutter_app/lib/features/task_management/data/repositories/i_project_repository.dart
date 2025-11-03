@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/project.dart';
 
 /// プロジェクトリポジトリのインターフェース
@@ -5,8 +6,14 @@ abstract class IProjectRepository {
   /// ユーザーのプロジェクト一覧をリアルタイムで監視
   ///
   /// [userId] ユーザーID
+  /// [limit] 取得件数上限（オプション）
+  /// [startAfterDoc] ページネーション用カーソル（オプション）
   /// 戻り値: プロジェクト一覧のStream
-  Stream<List<Project>> watchUserProjects({required String userId});
+  Stream<List<Project>> watchUserProjects({
+    required String userId,
+    int? limit,
+    DocumentSnapshot? startAfterDoc,
+  });
 
   /// 特定のプロジェクトをリアルタイムで監視
   ///

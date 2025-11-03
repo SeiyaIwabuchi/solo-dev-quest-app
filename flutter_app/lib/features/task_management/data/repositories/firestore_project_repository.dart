@@ -17,12 +17,24 @@ class FirestoreProjectRepository implements IProjectRepository {
   CollectionReference get _tasksCollection => _firestore.collection('tasks');
 
   @override
-  Stream<List<Project>> watchUserProjects({required String userId}) {
-    return _projectsCollection
+  Stream<List<Project>> watchUserProjects({
+    required String userId,
+    int? limit,
+    DocumentSnapshot? startAfterDoc,
+  }) {
+    Query<Object?> query = _projectsCollection
         .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
+        .orderBy('createdAt', descending: true);
+
+    if (startAfterDoc != null) {
+      query = query.startAfterDocument(startAfterDoc);
+    }
+
+    if (limit != null) {
+      query = query.limit(limit);
+    }
+
+    return query.snapshots().map((snapshot) => snapshot.docs
             .map((doc) => Project.fromFirestore(doc))
             .toList());
   }
