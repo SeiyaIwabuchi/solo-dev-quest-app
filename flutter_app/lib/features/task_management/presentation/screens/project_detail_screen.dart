@@ -63,7 +63,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       projectId: widget.project.id,
       sortBy: _sortBy,
       filterCompleted: filterCompleted,
-      limit: 1000, // 全タスクを表示
+      limit: 100, // インデックスビルド中は制限を小さくする
     )));
 
     // プロジェクトの統計情報を取得
