@@ -38,7 +38,7 @@ class AnalyticsService {
         'task_id': taskId,
         'project_id': projectId,
         if (taskName != null) 'task_name': taskName,
-        if (hasDueDate != null) 'has_due_date': hasDueDate,
+        if (hasDueDate != null) 'has_due_date': hasDueDate ? 1 : 0,
         'timestamp': DateTime.now().toIso8601String(),
       },
     );
