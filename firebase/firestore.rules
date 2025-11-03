@@ -2,9 +2,79 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // テスト用: 認証済みユーザーはすべてのコレクションに読み書き可能
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    // Users collection - 自分のプロフィールのみ読み書き可能
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && request.auth.uid == uid;
+      allow delete: if false; // Phase 0では削除不可
+    }
+
+    // Login locks collection - Cloud Functionsのみアクセス可能
+    match /login_locks/{email} {
+      allow read, write: if false;
+    }
+
+    // Projects collection - プロジェクト管理
+    match /projects/{projectId} {
+      // Get: Owner only
+      allow get: if request.auth != null 
+          && resource.data.userId == request.auth.uid;
+      
+      // List: Authenticated users can query their own projects
+      allow list: if request.auth != null;
+      
+      // Create: Authenticated users, userId must match auth
+      allow create: if request.auth != null 
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.name is string
+          && request.resource.data.name.size() >= 1
+          && request.resource.data.name.size() <= 100;
+      
+      // Update: Owner only, userId cannot be changed
+      allow update: if request.auth != null 
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.name is string
+          && request.resource.data.name.size() >= 1
+          && request.resource.data.name.size() <= 100;
+      
+      // Delete: Owner only
+      allow delete: if request.auth != null 
+          && resource.data.userId == request.auth.uid;
+    }
+
+    // Tasks collection - タスク管理
+    match /tasks/{taskId} {
+      // Get: Owner only
+      allow get: if request.auth != null 
+          && resource.data.userId == request.auth.uid;
+      
+      // List: Authenticated users can query their own tasks
+      // This allows empty result sets without checking resource.data
+      allow list: if request.auth != null;
+      
+      // Create: Authenticated users, userId must match auth
+      allow create: if request.auth != null 
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.projectId is string
+          && request.resource.data.name is string
+          && request.resource.data.name.size() >= 1
+          && request.resource.data.name.size() <= 200
+          && request.resource.data.isCompleted == false;
+      
+      // Update: Owner only, projectId and userId cannot be changed
+      allow update: if request.auth != null 
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.projectId == resource.data.projectId
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.name is string
+          && request.resource.data.name.size() >= 1
+          && request.resource.data.name.size() <= 200;
+      
+      // Delete: Owner only
+      allow delete: if request.auth != null 
+          && resource.data.userId == request.auth.uid;
     }
   }
 }
