@@ -290,7 +290,7 @@
 - [X] T097 Add l10n (日本語ローカライゼーション) for all user-facing strings
 - [X] T098 Performance optimization: add const constructors where possible
 - [X] T099 Code cleanup: run `fvm dart fix --apply` and address linter warnings
-- [ ] T100 Update quickstart.md with final implementation notes
+- [X] T100 Update quickstart.md with final implementation notes
 - [ ] T101 Create demo data script for testing (creates sample projects and tasks)
 - [ ] T102 Run integration tests with Firebase Emulator
 - [ ] T103 Deploy to Firebase Hosting (web version for demo)
