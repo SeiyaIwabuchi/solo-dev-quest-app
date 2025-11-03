@@ -74,11 +74,19 @@ class TaskListController extends StateNotifier<TaskListState> {
       );
 
       final repository = _ref.read(taskRepositoryProvider);
+      
+      // オフライン対応: 5秒タイムアウトを設定
       final (tasks, lastDoc) = await repository.getProjectTasks(
         projectId: projectId,
         sortBy: sortBy,
         filterCompleted: filterCompleted,
         limit: _pageSize,
+      ).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          // タイムアウト時は空のリストを返す（キャッシュなし）
+          return (const <Task>[], null);
+        },
       );
 
       state = state.copyWith(
@@ -101,12 +109,20 @@ class TaskListController extends StateNotifier<TaskListState> {
       state = state.copyWith(isLoadingMore: true, error: null);
 
       final repository = _ref.read(taskRepositoryProvider);
+      
+      // オフライン対応: 5秒タイムアウトを設定
       final (newTasks, lastDoc) = await repository.getProjectTasks(
         projectId: projectId,
         sortBy: state.sortBy,
         filterCompleted: state.filterCompleted,
         limit: _pageSize,
         startAfterDoc: state.lastDocument,
+      ).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          // タイムアウト時は空のリストを返す
+          return (const <Task>[], null);
+        },
       );
 
       state = state.copyWith(

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/task.dart';
@@ -82,13 +83,22 @@ class FirestoreTaskRepository implements ITaskRepository {
 
     query = query.limit(limit);
 
-    // オフライン対応: キャッシュから取得を優先、失敗したらサーバーから取得
-    QuerySnapshot snapshot;
+    // オフライン対応: キャッシュから取得を優先
+    QuerySnapshot? snapshot;
     try {
+      // まずキャッシュから取得を試みる
       snapshot = await query.get(const GetOptions(source: Source.cache));
-    } catch (_) {
-      // キャッシュがない場合はサーバーから取得
-      snapshot = await query.get();
+    } catch (cacheError) {
+      // キャッシュがない場合、サーバーから取得を試みる（タイムアウト付き）
+      try {
+        snapshot = await query.get().timeout(
+          const Duration(seconds: 3),
+        );
+      } catch (serverError) {
+        // サーバーからの取得も失敗（オフラインまたはタイムアウト）
+        // 空のリストを返す
+        return (const <Task>[], null);
+      }
     }
     
     final tasks = snapshot.docs.map((doc) => Task.fromFirestore(doc)).toList();
@@ -234,15 +244,26 @@ class FirestoreTaskRepository implements ITaskRepository {
     required String projectId,
   }) async {
     // オフライン対応: キャッシュから取得を優先
-    QuerySnapshot tasksSnapshot;
+    QuerySnapshot? tasksSnapshot;
     try {
       tasksSnapshot = await _tasksCollection
           .where('projectId', isEqualTo: projectId)
           .get(const GetOptions(source: Source.cache));
-    } catch (_) {
-      tasksSnapshot = await _tasksCollection
-          .where('projectId', isEqualTo: projectId)
-          .get();
+    } catch (cacheError) {
+      // キャッシュがない場合、サーバーから取得を試みる（タイムアウト付き）
+      try {
+        tasksSnapshot = await _tasksCollection
+            .where('projectId', isEqualTo: projectId)
+            .get()
+            .timeout(const Duration(seconds: 3));
+      } catch (serverError) {
+        // 取得失敗時は空の統計を返す
+        return const TaskStatistics(
+          totalTasks: 0,
+          completedTasks: 0,
+          overdueTasks: 0,
+        );
+      }
     }
 
     final totalTasks = tasksSnapshot.docs.length;
