@@ -42,6 +42,8 @@ dependencies:
   firebase_auth: ^5.3.3
   cloud_firestore: ^5.5.1
   cloud_functions: ^5.2.1
+  firebase_analytics: ^11.3.5
+  firebase_crashlytics: ^4.1.5
 
   # Authentication
   google_sign_in: ^6.2.2

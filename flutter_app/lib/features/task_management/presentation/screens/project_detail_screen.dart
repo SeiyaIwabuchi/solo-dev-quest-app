@@ -13,6 +13,7 @@ import '../widgets/completion_celebration_dialog.dart';
 import '../widgets/edit_project_dialog.dart';
 import '../../../../shared/widgets/delete_confirmation_dialog.dart';
 import '../../../../shared/widgets/offline_indicator.dart';
+import '../../../../core/services/analytics_service.dart';
 import 'task_edit_screen.dart';
 
 /// プロジェクト詳細画面（リアルタイム同期対応）
@@ -353,6 +354,15 @@ class ProjectDetailScreen extends ConsumerWidget {
         isCompleted: isCompleted,
       );
 
+      // T092: タスク完了イベントをログ
+      if (isCompleted) {
+        final analytics = ref.read(analyticsServiceProvider);
+        analytics.logTaskCompleted(
+          taskId: taskId,
+          projectId: currentProject.id,
+        );
+      }
+
       if (context.mounted) {
         // 成功メッセージを表示
         ScaffoldMessenger.of(context).showSnackBar(
@@ -398,6 +408,14 @@ class ProjectDetailScreen extends ConsumerWidget {
 
     // 完了率が100%の場合、祝福ダイアログを表示
     if (statisticsAsync.isProjectCompleted) {
+      // T092: プロジェクト完了イベントをログ
+      final analytics = ref.read(analyticsServiceProvider);
+      analytics.logProjectCompleted(
+        projectId: currentProject.id,
+        projectName: currentProject.name,
+        totalTasks: statisticsAsync.totalTasks,
+      );
+
       if (context.mounted) {
         await CompletionCelebrationDialog.show(
           context: context,

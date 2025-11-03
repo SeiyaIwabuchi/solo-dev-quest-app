@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/models/project.dart';
 import '../../providers/repository_providers.dart';
 import '../../../../core/exceptions/validation_exception.dart';
+import '../../../../core/services/analytics_service.dart';
 
 /// プロジェクトリストの状態管理コントローラー
 class ProjectListController extends StateNotifier<AsyncValue<void>> {
@@ -29,6 +30,13 @@ class ProjectListController extends StateNotifier<AsyncValue<void>> {
         userId: user.uid,
         name: name,
         description: description,
+      );
+
+      // T092: プロジェクト作成イベントをログ
+      final analytics = _ref.read(analyticsServiceProvider);
+      analytics.logProjectCreated(
+        projectId: project.id,
+        projectName: project.name,
       );
 
       state = const AsyncValue.data(null);
