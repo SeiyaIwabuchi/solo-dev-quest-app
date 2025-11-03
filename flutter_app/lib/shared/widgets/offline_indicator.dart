@@ -22,24 +22,25 @@ class OfflineIndicator extends ConsumerWidget {
               if (status == SyncStatus.syncing || status == SyncStatus.pending) {
                 return Container(
                   color: Colors.blue.shade700,
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       SizedBox(
-                        width: 14,
-                        height: 14,
+                        width: 12,
+                        height: 12,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       ),
-                      SizedBox(width: 8),
+                      SizedBox(width: 6),
                       Text(
                         '同期中...',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -57,22 +58,27 @@ class OfflineIndicator extends ConsumerWidget {
         // T087: Show offline mode indicator
         return Container(
           color: Colors.orange.shade700,
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 Icons.cloud_off,
                 color: Colors.white,
-                size: 16,
+                size: 14,
               ),
-              SizedBox(width: 8),
-              Text(
-                'オフラインモード - 変更はオンライン時に同期されます',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+              SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  'オフラインモード',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
@@ -86,7 +92,7 @@ class OfflineIndicator extends ConsumerWidget {
 }
 
 /// AppBar with offline indicator
-class AppBarWithOfflineIndicator extends StatelessWidget implements PreferredSizeWidget {
+class AppBarWithOfflineIndicator extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
   final List<Widget>? actions;
   final Widget? leading;
@@ -101,7 +107,7 @@ class AppBarWithOfflineIndicator extends StatelessWidget implements PreferredSiz
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -117,5 +123,9 @@ class AppBarWithOfflineIndicator extends StatelessWidget implements PreferredSiz
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 32); // AppBar height + indicator
+  Size get preferredSize {
+    // AppBar height + indicator banner height
+    // Banner: 6 (top padding) + 14 (icon height) + 6 (bottom padding) = 26
+    return const Size.fromHeight(kToolbarHeight + 26);
+  }
 }
