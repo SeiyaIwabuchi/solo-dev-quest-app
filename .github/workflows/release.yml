@@ -121,7 +121,7 @@ jobs:
           **ブランチ**: `${{ github.ref_name }}`
           **コミット**: `${{ github.sha }}`
         embed-color: 3066993
-        embed-url: "${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.event.inputs.version || steps.get-version.outputs.version }}"
+        embed-url: "${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.event.inputs.version || steps.get-version.outputs.version || 'v1.0.0' }}"
         embed-footer-text: "GitHub Actions"
         embed-timestamp: ""
     
