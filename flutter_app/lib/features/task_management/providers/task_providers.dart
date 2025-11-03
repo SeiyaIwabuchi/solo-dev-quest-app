@@ -32,32 +32,9 @@ final taskProvider = StreamProvider.autoDispose.family<Task?, String>((ref, task
 /// リアルタイムで統計情報を更新するため、StreamProviderを使用
 final projectTaskStatisticsProvider = StreamProvider.autoDispose
     .family<TaskStatistics, String>((ref, projectId) {
-  // プロジェクトのタスク一覧を監視して統計情報を計算
+  // リポジトリから直接統計情報を監視（Firestore側で集計）
   final repository = ref.watch(taskRepositoryProvider);
-  
-  return repository
-      .watchProjectTasks(
-        projectId: projectId,
-        sortBy: TaskSortBy.createdAt,
-        filterCompleted: null,
-        limit: 1000, // 統計計算のため全タスクを取得
-      )
-      .map((tasks) {
-        // タスク一覧から統計情報を計算
-        final totalTasks = tasks.length;
-        final completedTasks = tasks.where((task) => task.isCompleted).length;
-        final overdueTasks = tasks.where((task) {
-          if (task.isCompleted) return false;
-          if (task.dueDate == null) return false;
-          return task.dueDate!.isBefore(DateTime.now());
-        }).length;
-
-        return TaskStatistics(
-          totalTasks: totalTasks,
-          completedTasks: completedTasks,
-          overdueTasks: overdueTasks,
-        );
-      });
+  return repository.watchProjectTaskStatistics(projectId: projectId);
 });
 
 /// プロジェクトタスク取得用のパラメータクラス

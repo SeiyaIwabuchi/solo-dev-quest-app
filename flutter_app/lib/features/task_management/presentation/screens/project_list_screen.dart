@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/project.dart';
 import '../../providers/project_providers.dart';
+import '../../providers/task_providers.dart';
 import '../widgets/project_card.dart';
 import '../widgets/create_project_dialog.dart';
 import 'project_detail_screen.dart';
@@ -70,7 +71,7 @@ class ProjectListScreen extends ConsumerWidget {
                 
                 // プロジェクトの進捗率を取得
                 final statisticsAsync = ref.watch(
-                  projectStatisticsProvider(project.id),
+                  projectTaskStatisticsProvider(project.id),
                 );
 
                 return statisticsAsync.when(

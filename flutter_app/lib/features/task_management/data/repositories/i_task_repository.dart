@@ -97,6 +97,14 @@ abstract class ITaskRepository {
     required String projectId,
   });
 
+  /// プロジェクトのタスク統計情報をリアルタイムで監視
+  ///
+  /// [projectId] プロジェクトID
+  /// 戻り値: タスク統計情報のStream
+  Stream<TaskStatistics> watchProjectTaskStatistics({
+    required String projectId,
+  });
+
   /// タスクが存在するか確認
   ///
   /// [taskId] タスクID
