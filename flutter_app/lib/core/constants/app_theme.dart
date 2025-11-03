@@ -8,12 +8,7 @@ class AppTheme {
 
   // カラーパレット
   static const Color _primaryColor = Color(0xFF6750A4);
-  static const Color _secondaryColor = Color(0xFF625B71);
-  static const Color _tertiaryColor = Color(0xFF7D5260);
   static const Color _errorColor = Color(0xFFB3261E);
-  static const Color _successColor = Color(0xFF2E7D32);
-  static const Color _warningColor = Color(0xFFF57C00);
-  static const Color _infoColor = Color(0xFF0288D1);
 
   /// ライトテーマ
   static ThemeData get lightTheme {
@@ -36,7 +31,7 @@ class AppTheme {
       ),
       
       // Card テーマ
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -89,7 +84,7 @@ class AppTheme {
       ),
       
       // Dialog テーマ
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(28),
         ),
@@ -144,7 +139,7 @@ class AppTheme {
       ),
       
       // Card テーマ
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -197,7 +192,7 @@ class AppTheme {
       ),
       
       // Dialog テーマ
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(28),
         ),
