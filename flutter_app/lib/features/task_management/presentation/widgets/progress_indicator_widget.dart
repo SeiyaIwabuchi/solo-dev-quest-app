@@ -56,7 +56,7 @@ class ProgressIndicatorWidget extends StatelessWidget {
           child: LinearProgressIndicator(
             value: normalizedProgress,
             minHeight: height,
-            backgroundColor: theme.colorScheme.surfaceVariant,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
             valueColor: AlwaysStoppedAnimation<Color>(
               _getProgressColor(theme, normalizedProgress),
             ),

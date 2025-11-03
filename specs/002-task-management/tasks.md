@@ -282,14 +282,14 @@
 
 **Purpose**: 全体の品質向上とドキュメント整備
 
-- [ ] T092 [P] Add Firebase Analytics events for key actions (project_created, task_created, task_completed, project_completed)
-- [ ] T093 [P] Add Firebase Crashlytics error reporting
-- [ ] T094 [P] Create ErrorBoundary widget in lib/shared/widgets/error_boundary.dart (catches errors, shows user-friendly message)
-- [ ] T095 Add app-wide loading overlay in lib/shared/widgets/loading_overlay.dart
-- [ ] T096 Implement app theming in lib/core/constants/app_theme.dart (Material Design 3 colors, text styles)
-- [ ] T097 Add l10n (日本語ローカライゼーション) for all user-facing strings
-- [ ] T098 Performance optimization: add const constructors where possible
-- [ ] T099 Code cleanup: run `fvm dart fix --apply` and address linter warnings
+- [X] T092 [P] Add Firebase Analytics events for key actions (project_created, task_created, task_completed, project_completed)
+- [X] T093 [P] Add Firebase Crashlytics error reporting
+- [X] T094 [P] Create ErrorBoundary widget in lib/shared/widgets/error_boundary.dart (catches errors, shows user-friendly message)
+- [X] T095 Add app-wide loading overlay in lib/shared/widgets/loading_overlay.dart
+- [X] T096 Implement app theming in lib/core/constants/app_theme.dart (Material Design 3 colors, text styles)
+- [X] T097 Add l10n (日本語ローカライゼーション) for all user-facing strings
+- [X] T098 Performance optimization: add const constructors where possible
+- [X] T099 Code cleanup: run `fvm dart fix --apply` and address linter warnings
 - [ ] T100 Update quickstart.md with final implementation notes
 - [ ] T101 Create demo data script for testing (creates sample projects and tasks)
 - [ ] T102 Run integration tests with Firebase Emulator
