@@ -287,6 +287,35 @@ class FirestoreTaskRepository implements ITaskRepository {
   }
 
   @override
+  Stream<TaskStatistics> watchProjectTaskStatistics({
+    required String projectId,
+  }) {
+    return _tasksCollection
+        .where('projectId', isEqualTo: projectId)
+        .snapshots()
+        .map((snapshot) {
+      final totalTasks = snapshot.docs.length;
+      final completedTasks = snapshot.docs
+          .where((doc) => (doc.data() as Map<String, dynamic>)['isCompleted'] == true)
+          .length;
+
+      final now = DateTime.now();
+      final overdueTasks = snapshot.docs.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        if (data['isCompleted'] == true) return false;
+        if (data['dueDate'] == null) return false;
+        return (data['dueDate'] as Timestamp).toDate().isBefore(now);
+      }).length;
+
+      return TaskStatistics(
+        totalTasks: totalTasks,
+        completedTasks: completedTasks,
+        overdueTasks: overdueTasks,
+      );
+    });
+  }
+
+  @override
   Future<bool> exists({required String taskId}) async {
     // オフライン対応: キャッシュから取得を優先
     DocumentSnapshot doc;
