@@ -125,7 +125,11 @@ class FirestoreTaskRepository implements ITaskRepository {
       completedAt: null,
     );
 
-    await docRef.set(task.toFirestore());
+    // オフライン対応: setは非同期で実行し、即座にローカルタスクを返す
+    docRef.set(task.toFirestore()).catchError((error) {
+      print('Failed to create task (will retry when online): $error');
+    });
+    
     return task;
   }
 
@@ -141,7 +145,10 @@ class FirestoreTaskRepository implements ITaskRepository {
     _validateTaskDescription(description);
 
     final docRef = _tasksCollection.doc(taskId);
-    final doc = await docRef.get();
+    
+    // オフライン対応: キャッシュから取得
+    final doc = await docRef.get(const GetOptions(source: Source.cache))
+        .catchError((_) => docRef.get());
 
     if (!doc.exists) {
       throw NotFoundException(
@@ -162,7 +169,11 @@ class FirestoreTaskRepository implements ITaskRepository {
       updatedAt: DateTime.now(),
     );
 
-    await docRef.update(updatedTask.toFirestore());
+    // オフライン対応: updateは非同期で実行し、即座に更新済みタスクを返す
+    docRef.update(updatedTask.toFirestore()).catchError((error) {
+      print('Failed to update task (will retry when online): $error');
+    });
+    
     return updatedTask;
   }
 
@@ -172,7 +183,10 @@ class FirestoreTaskRepository implements ITaskRepository {
     required bool isCompleted,
   }) async {
     final docRef = _tasksCollection.doc(taskId);
-    final doc = await docRef.get();
+    
+    // オフライン対応: キャッシュから取得
+    final doc = await docRef.get(const GetOptions(source: Source.cache))
+        .catchError((_) => docRef.get());
 
     if (!doc.exists) {
       throw NotFoundException(
@@ -191,13 +205,20 @@ class FirestoreTaskRepository implements ITaskRepository {
       updatedAt: now,
     );
 
-    await docRef.update(updatedTask.toFirestore());
+    // オフライン対応: updateは非同期で実行し、即座に更新済みタスクを返す
+    docRef.update(updatedTask.toFirestore()).catchError((error) {
+      print('Failed to toggle task completion (will retry when online): $error');
+    });
+    
     return updatedTask;
   }
 
   @override
   Future<void> deleteTask({required String taskId}) async {
-    await _tasksCollection.doc(taskId).delete();
+    // オフライン対応: deleteは非同期で実行
+    _tasksCollection.doc(taskId).delete().catchError((error) {
+      print('Failed to delete task (will retry when online): $error');
+    });
   }
 
   @override
