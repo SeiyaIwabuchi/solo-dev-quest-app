@@ -38,6 +38,11 @@ jobs:
         cd flutter_app
         flutter pub get
         
+    - name: Generate code (freezed, json_serializable)
+      run: |
+        cd flutter_app
+        flutter pub run build_runner build --delete-conflicting-outputs
+        
     - name: Run tests
       run: |
         cd flutter_app
@@ -87,12 +92,55 @@ jobs:
         draft: false
         prerelease: false
 
-  notify-success:
+  notify-discord:
     runs-on: ubuntu-latest
     needs: build-apk
-    if: success()
+    if: always()
     steps:
-    - name: Success notification
+    - name: Get version
+      id: get-version
       run: |
-        echo "✅ Release build completed successfully!"
-        echo "🔗 Check the release at: ${{ github.server_url }}/${{ github.repository }}/releases"
+        if [ "${{ github.event.inputs.version }}" != "" ]; then
+          echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+        else
+          echo "version=${{ needs.build-apk.outputs.version }}" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Discord notification - Success
+      if: needs.build-apk.result == 'success'
+      uses: tsickert/discord-webhook@v6.0.0
+      with:
+        webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        username: "Solo Dev Quest Bot"
+        avatar-url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+        embed-title: "🚀 リリース完了"
+        embed-description: |
+          **Solo Dev Quest** の新しいバージョンがリリースされました!
+          
+          **バージョン**: `${{ github.event.inputs.version || steps.get-version.outputs.version }}`
+          **ブランチ**: `${{ github.ref_name }}`
+          **コミット**: `${{ github.sha }}`
+        embed-color: 3066993
+        embed-url: "${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.event.inputs.version || steps.get-version.outputs.version || 'v1.0.0' }}"
+        embed-footer-text: "GitHub Actions"
+        embed-timestamp: ""
+    
+    - name: Discord notification - Failure
+      if: needs.build-apk.result == 'failure'
+      uses: tsickert/discord-webhook@v6.0.0
+      with:
+        webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        username: "Solo Dev Quest Bot"
+        avatar-url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+        embed-title: "❌ リリース失敗"
+        embed-description: |
+          **Solo Dev Quest** のリリースビルドが失敗しました。
+          
+          **ブランチ**: `${{ github.ref_name }}`
+          **コミット**: `${{ github.sha }}`
+          
+          詳細はワークフローログを確認してください。
+        embed-color: 15158332
+        embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        embed-footer-text: "GitHub Actions"
+        embed-timestamp: ""

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -484,7 +485,27 @@ class AuthRepository {
   /// - [bool]: true if session is valid, false if expired
   Future<bool> checkSessionExpiry(String uid) async {
     try {
-      final userDoc = await _firebaseFirestore.collection('users').doc(uid).get();
+      // オフライン対応: キャッシュから取得を優先、タイムアウト付き
+      DocumentSnapshot userDoc;
+      try {
+        userDoc = await _firebaseFirestore
+            .collection('users')
+            .doc(uid)
+            .get(const GetOptions(source: Source.cache));
+      } catch (cacheError) {
+        // キャッシュがない場合、サーバーから取得を試みる（3秒タイムアウト）
+        try {
+          userDoc = await _firebaseFirestore
+              .collection('users')
+              .doc(uid)
+              .get()
+              .timeout(const Duration(seconds: 3));
+        } catch (serverError) {
+          // 取得失敗時はセッション有効として扱う（オフライン時にログアウトさせない）
+          print('Failed to check session expiry (offline?): $serverError');
+          return true;
+        }
+      }
       
       if (!userDoc.exists) {
         // User profile doesn't exist, sign out
@@ -492,11 +513,13 @@ class AuthRepository {
         return false;
       }
 
-      final data = userDoc.data();
+      final data = userDoc.data() as Map<String, dynamic>?;
       if (data == null || data['lastActivityAt'] == null) {
         // No lastActivityAt field, consider session valid
-        // Update it for future checks
-        await _updateLastActivity(uid);
+        // Update it for future checks (non-blocking)
+        _updateLastActivity(uid).catchError((e) {
+          print('Failed to update last activity: $e');
+        });
         return true;
       }
 
@@ -510,14 +533,15 @@ class AuthRepository {
         return false;
       }
 
-      // Session is valid, update last activity
-      await _updateLastActivity(uid);
+      // Session is valid, update last activity (non-blocking)
+      _updateLastActivity(uid).catchError((e) {
+        print('Failed to update last activity: $e');
+      });
       return true;
     } catch (e) {
-      // On error, assume session is invalid and sign out
+      // On error, assume session is valid (don't block user when offline)
       print('Failed to check session expiry: $e');
-      await signOut();
-      return false;
+      return true;
     }
   }
 }
