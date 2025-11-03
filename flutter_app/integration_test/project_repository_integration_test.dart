@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:solo_dev_quest/core/exceptions/validation_exception.dart';
 import 'package:solo_dev_quest/core/exceptions/not_found_exception.dart';
 import 'package:solo_dev_quest/features/task_management/data/models/project.dart';
@@ -21,21 +22,49 @@ import 'package:solo_dev_quest/features/task_management/data/repositories/firest
 /// ```
 void main() {
   late FirestoreProjectRepository repository;
-  const testUserId = 'test-user-123';
+  late String testUserId;
 
   setUpAll(() async {
     // Firebase初期化（Emulator接続）
-    await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: 'test-api-key',
-        appId: 'test-app-id',
-        messagingSenderId: 'test-sender-id',
-        projectId: 'test-project-id',
-      ),
-    );
+    try {
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: 'test-api-key',
+          appId: 'test-app-id',
+          messagingSenderId: 'test-sender-id',
+          projectId: 'test-project-id',
+        ),
+      );
+    } catch (e) {
+      // 既に初期化されている場合は無視
+      print('Firebase already initialized: $e');
+    }
 
     // Firebase Emulator接続設定
-    FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+    try {
+      FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+    } catch (e) {
+      // 既に設定されている場合は無視
+      print('Firestore emulator already configured: $e');
+    }
+    
+    // Firebase Auth Emulator接続設定
+    try {
+      FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+    } catch (e) {
+      // 既に設定されている場合は無視
+      print('Auth emulator already configured: $e');
+    }
+    
+    // テストユーザーで匿名ログイン（Firestore Rulesをパスするため）
+    try {
+      final userCredential = await FirebaseAuth.instance.signInAnonymously();
+      testUserId = userCredential.user!.uid;
+      print('Test user signed in: $testUserId');
+    } catch (e) {
+      print('Failed to sign in test user: $e');
+      throw Exception('Cannot run tests without authenticated user');
+    }
     
     // Firestoreの設定（オフライン永続化無効化 - テスト用）
     FirebaseFirestore.instance.settings = const Settings(
@@ -310,6 +339,7 @@ void main() {
 
         final updated = await repository.updateProject(
           projectId: created.id,
+          name: created.name,
           description: 'Updated Description',
         );
 
@@ -367,9 +397,9 @@ void main() {
           name: 'To Delete',
         );
 
-        await repository.deleteProject(created.id);
+        await repository.deleteProject(projectId: created.id);
 
-        final exists = await repository.exists(created.id);
+        final exists = await repository.exists(projectId: created.id);
         expect(exists, false);
       });
 
@@ -391,7 +421,7 @@ void main() {
         });
 
         // プロジェクトを削除
-        await repository.deleteProject(project.id);
+        await repository.deleteProject(projectId: project.id);
 
         // タスクも削除されていることを確認
         final taskDoc = await taskRef.get();
@@ -400,7 +430,7 @@ void main() {
 
       test('存在しないプロジェクトの削除時はNotFoundExceptionをスローすること', () async {
         expect(
-          () => repository.deleteProject('non-existent-id'),
+          () => repository.deleteProject(projectId: 'non-existent-id'),
           throwsA(isA<NotFoundException>()),
         );
       });
@@ -413,12 +443,12 @@ void main() {
           name: 'Existing Project',
         );
 
-        final exists = await repository.exists(created.id);
+        final exists = await repository.exists(projectId: created.id);
         expect(exists, true);
       });
 
       test('存在しないプロジェクトの場合falseを返すこと', () async {
-        final exists = await repository.exists('non-existent-id');
+        final exists = await repository.exists(projectId: 'non-existent-id');
         expect(exists, false);
       });
     });
@@ -460,7 +490,7 @@ void main() {
         await Future.wait([update1, update2]);
 
         // 最後の書き込みが勝つ（どちらかの名前になっている）
-        final stream = repository.watchProject(created.id);
+        final stream = repository.watchProject(projectId: created.id);
         final final_ = await stream.first;
         
         expect(final_!.name, anyOf('Update 1', 'Update 2'));
