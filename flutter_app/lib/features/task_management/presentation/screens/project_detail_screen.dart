@@ -455,18 +455,18 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
     if (!context.mounted) return;
 
-    final statisticsAsync = await ref.read(
+    final statisticsAsyncValue = await ref.read(
       projectTaskStatisticsProvider(currentProject.id).future,
     );
 
     // 完了率が100%の場合、祝福ダイアログを表示
-    if (statisticsAsync.isProjectCompleted) {
+    if (statisticsAsyncValue.isProjectCompleted) {
       // T092: プロジェクト完了イベントをログ
       final analytics = ref.read(analyticsServiceProvider);
       analytics.logProjectCompleted(
         projectId: currentProject.id,
         projectName: currentProject.name,
-        totalTasks: statisticsAsync.totalTasks,
+        totalTasks: statisticsAsyncValue.totalTasks,
       );
 
       if (context.mounted) {
