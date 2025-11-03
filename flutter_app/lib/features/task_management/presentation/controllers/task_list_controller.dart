@@ -6,6 +6,7 @@ import '../../data/models/task.dart';
 import '../../domain/enums/task_sort_by.dart';
 import '../../providers/repository_providers.dart';
 import '../../../../core/exceptions/validation_exception.dart';
+import '../../../../core/services/analytics_service.dart';
 
 /// タスクリストの状態
 class TaskListState {
@@ -159,6 +160,15 @@ class TaskListController extends StateNotifier<TaskListState> {
         name: name,
         description: description,
         dueDate: dueDate,
+      );
+
+      // T092: タスク作成イベントをログ
+      final analytics = _ref.read(analyticsServiceProvider);
+      analytics.logTaskCreated(
+        taskId: task.id,
+        projectId: projectId,
+        taskName: name,
+        hasDueDate: dueDate != null,
       );
 
       return task;
