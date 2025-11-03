@@ -92,7 +92,8 @@ class OfflineIndicator extends ConsumerWidget {
 }
 
 /// AppBar with offline indicator
-class AppBarWithOfflineIndicator extends ConsumerWidget implements PreferredSizeWidget {
+/// This widget wraps a standard AppBar and displays the offline indicator below it
+class AppBarWithOfflineIndicator extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final List<Widget>? actions;
   final Widget? leading;
@@ -107,25 +108,30 @@ class AppBarWithOfflineIndicator extends ConsumerWidget implements PreferredSize
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AppBar(
-          title: Text(title),
-          actions: actions,
-          leading: leading,
-          automaticallyImplyLeading: automaticallyImplyLeading,
-        ),
-        const OfflineIndicator(),
-      ],
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppBar(
+            title: Text(title),
+            actions: actions,
+            leading: leading,
+            automaticallyImplyLeading: automaticallyImplyLeading,
+          ),
+          const OfflineIndicator(),
+        ],
+      ),
     );
   }
 
   @override
   Size get preferredSize {
-    // AppBar height + indicator banner height
-    // Banner: 6 (top padding) + 14 (icon height) + 6 (bottom padding) = 26
-    return const Size.fromHeight(kToolbarHeight + 26);
+    // Fixed size with buffer for indicator
+    // AppBar: 56 (kToolbarHeight)
+    // Indicator: up to 26 pixels (6 + 14 + 6)
+    // Extra buffer: 8 pixels to prevent overflow
+    return const Size.fromHeight(kToolbarHeight + 34);
   }
 }
