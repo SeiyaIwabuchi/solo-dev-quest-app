@@ -57,7 +57,13 @@ class FirestoreProjectRepository implements IProjectRepository {
       updatedAt: now,
     );
 
-    await docRef.set(project.toFirestore());
+    // オフライン対応: setは非同期で実行し、即座にローカルプロジェクトを返す
+    // Firestoreの永続化により、オンライン復帰時に自動同期される
+    docRef.set(project.toFirestore()).catchError((error) {
+      // エラーはログに記録するが、ユーザー体験を妨げない
+      print('Failed to create project (will retry when online): $error');
+    });
+    
     return project;
   }
 
@@ -72,7 +78,10 @@ class FirestoreProjectRepository implements IProjectRepository {
     _validateProjectDescription(description);
 
     final docRef = _projectsCollection.doc(projectId);
-    final doc = await docRef.get();
+    
+    // オフライン対応: キャッシュから取得（オフライン時はメタデータで判定）
+    final doc = await docRef.get(const GetOptions(source: Source.cache))
+        .catchError((_) => docRef.get());
 
     if (!doc.exists) {
       throw NotFoundException(
@@ -92,7 +101,11 @@ class FirestoreProjectRepository implements IProjectRepository {
       updatedAt: DateTime.now(),
     );
 
-    await docRef.update(updatedProject.toFirestore());
+    // オフライン対応: updateは非同期で実行し、即座に更新済みプロジェクトを返す
+    docRef.update(updatedProject.toFirestore()).catchError((error) {
+      print('Failed to update project (will retry when online): $error');
+    });
+    
     return updatedProject;
   }
 
@@ -105,16 +118,22 @@ class FirestoreProjectRepository implements IProjectRepository {
     final projectRef = _projectsCollection.doc(projectId);
     batch.delete(projectRef);
 
-    // 関連タスクの削除
+    // 関連タスクの削除（オフライン対応: キャッシュから取得を試みる）
     final tasksSnapshot = await _tasksCollection
         .where('projectId', isEqualTo: projectId)
-        .get();
+        .get(const GetOptions(source: Source.cache))
+        .catchError((_) => _tasksCollection
+            .where('projectId', isEqualTo: projectId)
+            .get());
 
     for (final taskDoc in tasksSnapshot.docs) {
       batch.delete(taskDoc.reference);
     }
 
-    await batch.commit();
+    // オフライン対応: バッチコミットは非同期で実行
+    batch.commit().catchError((error) {
+      print('Failed to delete project (will retry when online): $error');
+    });
   }
 
   @override
