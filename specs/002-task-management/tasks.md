@@ -225,15 +225,15 @@
 
 ### Implementation for User Story 7
 
-- [ ] T070 [P] [US7] Create TaskFilterState model in lib/features/task_management/domain/enums/task_filter_state.dart (all, completed, uncompleted, overdue)
-- [ ] T071 [US7] Add sort and filter controls to ProjectDetailScreen (dropdown or bottom sheet)
-- [ ] T072 [US7] Implement sort by creation date (descending - default) in TaskListController
-- [ ] T073 [US7] Implement sort by due date (ascending) in TaskListController
-- [ ] T074 [US7] Implement filter by completed status (show only completed/uncompleted) in TaskListController
-- [ ] T075 [US7] Implement filter by overdue status (show only overdue tasks) in TaskListController
-- [ ] T076 [US7] Update Firestore query in FirestoreTaskRepository.watchProjectTasks to support sortBy and filterCompleted parameters
-- [ ] T077 [US7] Add visual indicators for active filters (chip badges)
-- [ ] T078 [US7] Add clear filter button
+- [X] T070 [P] [US7] Create TaskFilterState model in lib/features/task_management/domain/enums/task_filter_state.dart (all, completed, uncompleted, overdue)
+- [X] T071 [US7] Add sort and filter controls to ProjectDetailScreen (dropdown or bottom sheet)
+- [X] T072 [US7] Implement sort by creation date (descending - default) in TaskListController
+- [X] T073 [US7] Implement sort by due date (ascending) in TaskListController
+- [X] T074 [US7] Implement filter by completed status (show only completed/uncompleted) in TaskListController
+- [X] T075 [US7] Implement filter by overdue status (show only overdue tasks) in TaskListController
+- [X] T076 [US7] Update Firestore query in FirestoreTaskRepository.watchProjectTasks to support sortBy and filterCompleted parameters
+- [X] T077 [US7] Add visual indicators for active filters (chip badges)
+- [X] T078 [US7] Add clear filter button
 
 **Checkpoint**: User Story 7完了 - ソート・フィルター機能が動作
 
