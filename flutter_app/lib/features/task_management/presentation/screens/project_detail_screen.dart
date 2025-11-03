@@ -7,17 +7,19 @@ import '../../providers/task_providers.dart';
 import '../../providers/project_providers.dart';
 import '../../providers/repository_providers.dart';
 import '../../domain/enums/task_sort_by.dart';
+import '../../domain/enums/task_filter_state.dart';
 import '../widgets/task_tile.dart';
 import '../widgets/progress_indicator_widget.dart';
 import '../widgets/completion_celebration_dialog.dart';
 import '../widgets/edit_project_dialog.dart';
+import '../widgets/task_sort_filter_controls.dart';
 import '../../../../shared/widgets/delete_confirmation_dialog.dart';
 import '../../../../shared/widgets/offline_indicator.dart';
 import '../../../../core/services/analytics_service.dart';
 import 'task_edit_screen.dart';
 
 /// プロジェクト詳細画面（リアルタイム同期対応）
-class ProjectDetailScreen extends ConsumerWidget {
+class ProjectDetailScreen extends ConsumerStatefulWidget {
   const ProjectDetailScreen({
     super.key,
     required this.project,
@@ -26,22 +28,46 @@ class ProjectDetailScreen extends ConsumerWidget {
   final Project project;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProjectDetailScreen> createState() => _ProjectDetailScreenState();
+}
+
+class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
+  // ソート・フィルター状態
+  TaskSortBy _sortBy = TaskSortBy.createdAt;
+  TaskFilterState _filterState = TaskFilterState.all;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     // プロジェクト情報をリアルタイムで監視
-    final projectAsync = ref.watch(projectProvider(project.id));
+    final projectAsync = ref.watch(projectProvider(widget.project.id));
+    
+    // フィルター完了状態を計算
+    bool? filterCompleted;
+    switch (_filterState) {
+      case TaskFilterState.all:
+      case TaskFilterState.overdue:
+        filterCompleted = null;
+        break;
+      case TaskFilterState.completed:
+        filterCompleted = true;
+        break;
+      case TaskFilterState.uncompleted:
+        filterCompleted = false;
+        break;
+    }
     
     // タスク一覧をリアルタイムで監視
     final tasksAsync = ref.watch(projectTasksProvider(ProjectTasksParams(
-      projectId: project.id,
-      sortBy: TaskSortBy.createdAt,
-      filterCompleted: null,
+      projectId: widget.project.id,
+      sortBy: _sortBy,
+      filterCompleted: filterCompleted,
       limit: 1000, // 全タスクを表示
     )));
 
     // プロジェクトの統計情報を取得
-    final statisticsAsync = ref.watch(projectTaskStatisticsProvider(project.id));
+    final statisticsAsync = ref.watch(projectTaskStatisticsProvider(widget.project.id));
 
     return projectAsync.when(
       loading: () => const Scaffold(
@@ -187,6 +213,22 @@ class ProjectDetailScreen extends ConsumerWidget {
                 ),
               ),
 
+              // ソート・フィルターコントロール
+              TaskSortFilterControls(
+                currentSortBy: _sortBy,
+                currentFilterState: _filterState,
+                onSortChanged: (newSortBy) {
+                  setState(() {
+                    _sortBy = newSortBy;
+                  });
+                },
+                onFilterChanged: (newFilterState) {
+                  setState(() {
+                    _filterState = newFilterState;
+                  });
+                },
+              ),
+
               // タスク一覧
               Expanded(
                 child: _buildTaskList(context, ref, theme, currentProject, tasksAsync),
@@ -245,7 +287,18 @@ class ProjectDetailScreen extends ConsumerWidget {
         ),
       ),
       data: (tasks) {
-        if (tasks.isEmpty) {
+        // 期限超過フィルターを適用（クライアント側フィルタリング）
+        List<Task> filteredTasks = tasks;
+        if (_filterState == TaskFilterState.overdue) {
+          final now = DateTime.now();
+          filteredTasks = tasks.where((task) {
+            return !task.isCompleted &&
+                task.dueDate != null &&
+                task.dueDate!.isBefore(now);
+          }).toList();
+        }
+
+        if (filteredTasks.isEmpty) {
           return _buildEmptyState(context, ref, currentProject);
         }
 
@@ -255,10 +308,10 @@ class ProjectDetailScreen extends ConsumerWidget {
           },
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: tasks.length,
+            itemCount: filteredTasks.length,
             separatorBuilder: (context, index) => const Divider(height: 1),
             itemBuilder: (context, index) {
-              final task = tasks[index];
+              final task = filteredTasks[index];
               return TaskTile(
                 task: task,
                 onTap: () => _showTaskEditScreen(context, ref, currentProject, task: task),
