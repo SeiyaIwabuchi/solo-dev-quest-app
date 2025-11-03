@@ -82,7 +82,15 @@ class FirestoreTaskRepository implements ITaskRepository {
 
     query = query.limit(limit);
 
-    final snapshot = await query.get();
+    // オフライン対応: キャッシュから取得を優先、失敗したらサーバーから取得
+    QuerySnapshot snapshot;
+    try {
+      snapshot = await query.get(const GetOptions(source: Source.cache));
+    } catch (_) {
+      // キャッシュがない場合はサーバーから取得
+      snapshot = await query.get();
+    }
+    
     final tasks = snapshot.docs.map((doc) => Task.fromFirestore(doc)).toList();
     final lastDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
 
@@ -225,9 +233,17 @@ class FirestoreTaskRepository implements ITaskRepository {
   Future<TaskStatistics> getProjectTaskStatistics({
     required String projectId,
   }) async {
-    final tasksSnapshot = await _tasksCollection
-        .where('projectId', isEqualTo: projectId)
-        .get();
+    // オフライン対応: キャッシュから取得を優先
+    QuerySnapshot tasksSnapshot;
+    try {
+      tasksSnapshot = await _tasksCollection
+          .where('projectId', isEqualTo: projectId)
+          .get(const GetOptions(source: Source.cache));
+    } catch (_) {
+      tasksSnapshot = await _tasksCollection
+          .where('projectId', isEqualTo: projectId)
+          .get();
+    }
 
     final totalTasks = tasksSnapshot.docs.length;
     final completedTasks = tasksSnapshot.docs
@@ -251,7 +267,13 @@ class FirestoreTaskRepository implements ITaskRepository {
 
   @override
   Future<bool> exists({required String taskId}) async {
-    final doc = await _tasksCollection.doc(taskId).get();
+    // オフライン対応: キャッシュから取得を優先
+    DocumentSnapshot doc;
+    try {
+      doc = await _tasksCollection.doc(taskId).get(const GetOptions(source: Source.cache));
+    } catch (_) {
+      doc = await _tasksCollection.doc(taskId).get();
+    }
     return doc.exists;
   }
 
