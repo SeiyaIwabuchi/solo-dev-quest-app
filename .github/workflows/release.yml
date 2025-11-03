@@ -1,0 +1,146 @@
+name: Release APK Build
+
+on:
+  push:
+    branches: [ production ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+        
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.7'
+        channel: 'stable'
+        
+    - name: Get dependencies
+      run: |
+        cd flutter_app
+        flutter pub get
+        
+    - name: Generate code (freezed, json_serializable)
+      run: |
+        cd flutter_app
+        flutter pub run build_runner build --delete-conflicting-outputs
+        
+    - name: Run tests
+      run: |
+        cd flutter_app
+        flutter test
+        
+    - name: Build APK
+      run: |
+        cd flutter_app
+        flutter build apk --release
+        
+    - name: Get version from pubspec.yaml
+      id: version
+      run: |
+        cd flutter_app
+        VERSION=$(grep '^version:' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+        echo "version=v$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: v$VERSION"
+        
+    - name: Create Release with APK
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.event.inputs.version || steps.version.outputs.version }}
+        name: Release ${{ github.event.inputs.version || steps.version.outputs.version }}
+        body: |
+          ## 🚀 Solo Dev Quest - Release ${{ github.event.inputs.version || steps.version.outputs.version }}
+          
+          ### 📱 ダウンロード
+          - **Android**: APKファイルをダウンロードしてインストール
+          
+          ### ✨ 変更内容
+          - Hello World リリース
+          - 基本的なFlutterアプリケーション
+          
+          ### 🔧 技術情報
+          - Flutter: 3.35.7
+          - Dart: 対応バージョン
+          - 対象OS: Android 5.0+ (API level 21+)
+          
+          ---
+          
+          **Installation**: APKファイルをダウンロードし、Android端末にインストールしてください。
+          **Note**: 初回インストール時は「不明なアプリのインストール」を許可する必要があります。
+        files: |
+          flutter_app/build/app/outputs/flutter-apk/app-release.apk
+        draft: false
+        prerelease: false
+
+  notify-discord:
+    runs-on: ubuntu-latest
+    needs: build-apk
+    if: always()
+    steps:
+    - name: Get version
+      id: get-version
+      run: |
+        if [ "${{ github.event.inputs.version }}" != "" ]; then
+          echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+        else
+          echo "version=${{ needs.build-apk.outputs.version }}" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Discord notification - Success
+      if: needs.build-apk.result == 'success'
+      uses: tsickert/discord-webhook@v6.0.0
+      with:
+        webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        username: "Solo Dev Quest Bot"
+        avatar-url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+        embed-title: "🚀 リリース完了"
+        embed-description: |
+          **Solo Dev Quest** の新しいバージョンがリリースされました!
+          
+          **バージョン**: `${{ github.event.inputs.version || steps.get-version.outputs.version }}`
+          **ブランチ**: `${{ github.ref_name }}`
+          **コミット**: `${{ github.sha }}`
+        embed-color: 3066993
+        embed-url: "${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.event.inputs.version || steps.get-version.outputs.version || 'v1.0.0' }}"
+        embed-footer-text: "GitHub Actions"
+        embed-timestamp: ""
+    
+    - name: Discord notification - Failure
+      if: needs.build-apk.result == 'failure'
+      uses: tsickert/discord-webhook@v6.0.0
+      with:
+        webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        username: "Solo Dev Quest Bot"
+        avatar-url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+        embed-title: "❌ リリース失敗"
+        embed-description: |
+          **Solo Dev Quest** のリリースビルドが失敗しました。
+          
+          **ブランチ**: `${{ github.ref_name }}`
+          **コミット**: `${{ github.sha }}`
+          
+          詳細はワークフローログを確認してください。
+        embed-color: 15158332
+        embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        embed-footer-text: "GitHub Actions"
+        embed-timestamp: ""
