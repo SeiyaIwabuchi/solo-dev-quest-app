@@ -22,13 +22,13 @@
 
 **Purpose**: Flutter + Firebase基盤構築と依存関係インストール
 
-- [ ] T001 Add dependencies to flutter_app/pubspec.yaml: flutter_riverpod ^2.6.1, cloud_firestore ^5.5.1, freezed ^2.5.7, freezed_annotation ^2.4.4, json_annotation ^4.9.0, build_runner ^2.4.13, json_serializable ^6.8.0
-- [ ] T002 Run `fvm flutter pub get` to install dependencies
-- [ ] T003 [P] Create lib/core/exceptions/ directory and add validation_exception.dart, not_found_exception.dart, unauthorized_exception.dart
-- [ ] T004 [P] Create lib/features/task_management/ directory structure: data/models/, data/repositories/, domain/enums/, presentation/controllers/, presentation/screens/, presentation/widgets/, providers/
-- [ ] T005 Setup Firestore indexes in firebase/firestore.indexes.json (4 composite indexes per data-model.md)
-- [ ] T006 Setup Firestore security rules in firebase/firestore.rules for projects and tasks collections
-- [ ] T007 Deploy Firestore rules and indexes: `cd firebase && firebase deploy --only firestore`
+- [X] T001 Add dependencies to flutter_app/pubspec.yaml: flutter_riverpod ^2.6.1, cloud_firestore ^5.5.1, freezed ^2.5.7, freezed_annotation ^2.4.4, json_annotation ^4.9.0, build_runner ^2.4.13, json_serializable ^6.8.0
+- [X] T002 Run `fvm flutter pub get` to install dependencies
+- [X] T003 [P] Create lib/core/exceptions/ directory and add validation_exception.dart, not_found_exception.dart, unauthorized_exception.dart
+- [X] T004 [P] Create lib/features/task_management/ directory structure: data/models/, data/repositories/, domain/enums/, presentation/controllers/, presentation/screens/, presentation/widgets/, providers/
+- [X] T005 Setup Firestore indexes in firebase/firestore.indexes.json (4 composite indexes per data-model.md)
+- [X] T006 Setup Firestore security rules in firebase/firestore.rules for projects and tasks collections
+- [X] T007 Deploy Firestore rules and indexes: `cd firebase && firebase deploy --only firestore`
 
 ---
 
@@ -40,16 +40,16 @@
 
 **Constitution Principle III準拠**: Firebase-First Architecture（Firestore使用）
 
-- [ ] T008 [P] Create Project model with Freezed in lib/features/task_management/data/models/project.dart (id, userId, name, description, createdAt, updatedAt)
-- [ ] T009 [P] Create Task model with Freezed in lib/features/task_management/data/models/task.dart (id, projectId, userId, name, description, dueDate, isCompleted, createdAt, updatedAt, completedAt)
-- [ ] T010 [P] Create TaskStatistics model with Freezed in lib/features/task_management/data/models/task_statistics.dart (totalTasks, completedTasks, overdueTasks, completionRate, isProjectCompleted)
-- [ ] T011 [P] Create TaskSortBy enum in lib/features/task_management/domain/enums/task_sort_by.dart (createdAt, dueDate)
-- [ ] T012 Run Freezed code generation: `cd flutter_app && fvm flutter pub run build_runner build --delete-conflicting-outputs`
-- [ ] T013 Create IProjectRepository interface in lib/features/task_management/data/repositories/i_project_repository.dart (watchUserProjects, watchProject, createProject, updateProject, deleteProject, exists)
-- [ ] T014 Create ITaskRepository interface in lib/features/task_management/data/repositories/i_task_repository.dart (watchProjectTasks, watchTask, createTask, updateTask, toggleTaskCompletion, deleteTask, getProjectTaskStatistics, exists)
-- [ ] T015 Implement FirestoreProjectRepository in lib/features/task_management/data/repositories/firestore_project_repository.dart with all IProjectRepository methods
-- [ ] T016 Implement FirestoreTaskRepository in lib/features/task_management/data/repositories/firestore_task_repository.dart with all ITaskRepository methods
-- [ ] T017 [P] Create repository providers in lib/features/task_management/providers/repository_providers.dart (projectRepositoryProvider, taskRepositoryProvider)
+- [X] T008 [P] Create Project model with Freezed in lib/features/task_management/data/models/project.dart (id, userId, name, description, createdAt, updatedAt)
+- [X] T009 [P] Create Task model with Freezed in lib/features/task_management/data/models/task.dart (id, projectId, userId, name, description, dueDate, isCompleted, createdAt, updatedAt, completedAt)
+- [X] T010 [P] Create TaskStatistics model with Freezed in lib/features/task_management/data/models/task_statistics.dart (totalTasks, completedTasks, overdueTasks, completionRate, isProjectCompleted)
+- [X] T011 [P] Create TaskSortBy enum in lib/features/task_management/domain/enums/task_sort_by.dart (createdAt, dueDate)
+- [X] T012 Run Freezed code generation: `cd flutter_app && fvm flutter pub run build_runner build --delete-conflicting-outputs`
+- [X] T013 Create IProjectRepository interface in lib/features/task_management/data/repositories/i_project_repository.dart (watchUserProjects, watchProject, createProject, updateProject, deleteProject, exists)
+- [X] T014 Create ITaskRepository interface in lib/features/task_management/data/repositories/i_task_repository.dart (watchProjectTasks, watchTask, createTask, updateTask, toggleTaskCompletion, deleteTask, getProjectTaskStatistics, exists)
+- [X] T015 Implement FirestoreProjectRepository in lib/features/task_management/data/repositories/firestore_project_repository.dart with all IProjectRepository methods
+- [X] T016 Implement FirestoreTaskRepository in lib/features/task_management/data/repositories/firestore_task_repository.dart with all ITaskRepository methods
+- [X] T017 [P] Create repository providers in lib/features/task_management/providers/repository_providers.dart (projectRepositoryProvider, taskRepositoryProvider)
 
 **Checkpoint**: データ層完成 - ユーザーストーリー実装を並行開始可能
 
@@ -68,14 +68,14 @@
 
 ### Implementation for User Story 1
 
-- [ ] T018 [P] [US1] Create project providers in lib/features/task_management/providers/project_providers.dart (userProjectsProvider, projectProvider using StreamProvider)
-- [ ] T019 [P] [US1] Create ProjectListController in lib/features/task_management/presentation/controllers/project_list_controller.dart (handles project creation logic, validation)
-- [ ] T020 [US1] Create ProjectListScreen in lib/features/task_management/presentation/screens/project_list_screen.dart (displays all user projects, FAB for new project)
-- [ ] T021 [P] [US1] Create ProjectCard widget in lib/features/task_management/presentation/widgets/project_card.dart (displays project name, description, progress rate, creation date)
-- [ ] T022 [P] [US1] Create CreateProjectDialog widget in lib/features/task_management/presentation/widgets/create_project_dialog.dart (input form for name and description with validation)
-- [ ] T023 [US1] Implement project creation flow: form validation (name 1-100 chars, description 0-500 chars), Firestore write, navigation to project detail
-- [ ] T024 [US1] Add empty state UI in ProjectListScreen (no projects message + create button)
-- [ ] T025 [US1] Add loading states and error handling with Riverpod AsyncValue
+- [X] T018 [P] [US1] Create project providers in lib/features/task_management/providers/project_providers.dart (userProjectsProvider, projectProvider using StreamProvider)
+- [X] T019 [P] [US1] Create ProjectListController in lib/features/task_management/presentation/controllers/project_list_controller.dart (handles project creation logic, validation)
+- [X] T020 [US1] Create ProjectListScreen in lib/features/task_management/presentation/screens/project_list_screen.dart (displays all user projects, FAB for new project)
+- [X] T021 [P] [US1] Create ProjectCard widget in lib/features/task_management/presentation/widgets/project_card.dart (displays project name, description, progress rate, creation date)
+- [X] T022 [P] [US1] Create CreateProjectDialog widget in lib/features/task_management/presentation/widgets/create_project_dialog.dart (input form for name and description with validation)
+- [X] T023 [US1] Implement project creation flow: form validation (name 1-100 chars, description 0-500 chars), Firestore write, navigation to project detail
+- [X] T024 [US1] Add empty state UI in ProjectListScreen (no projects message + create button)
+- [X] T025 [US1] Add loading states and error handling with Riverpod AsyncValue
 
 **Checkpoint**: User Story 1完了 - プロジェクト作成機能が独立してテスト可能
 
@@ -94,13 +94,13 @@
 
 ### Implementation for User Story 2
 
-- [ ] T026 [P] [US2] Create ProgressIndicatorWidget in lib/features/task_management/presentation/widgets/progress_indicator_widget.dart (displays completion percentage with visual bar)
-- [ ] T027 [US2] Enhance ProjectCard to display progress rate using ProgressIndicatorWidget
-- [ ] T028 [US2] Add project statistics calculation logic in ProjectListController (calls taskRepository.getProjectTaskStatistics)
-- [ ] T029 [US2] Implement project card tap navigation to project detail screen
-- [ ] T030 [US2] Add Firestore realtime listener for project list updates (via Riverpod StreamProvider)
-- [ ] T031 [US2] Handle empty project list state (已在US1实现，验证即可)
-- [ ] T032 [US2] Add pull-to-refresh functionality on ProjectListScreen
+- [X] T026 [P] [US2] Create ProgressIndicatorWidget in lib/features/task_management/presentation/widgets/progress_indicator_widget.dart (displays completion percentage with visual bar)
+- [X] T027 [US2] Enhance ProjectCard to display progress rate using ProgressIndicatorWidget
+- [X] T028 [US2] Add project statistics calculation logic in ProjectListController (calls taskRepository.getProjectTaskStatistics)
+- [X] T029 [US2] Implement project card tap navigation to project detail screen
+- [X] T030 [US2] Add Firestore realtime listener for project list updates (via Riverpod StreamProvider)
+- [X] T031 [US2] Handle empty project list state (已在US1实现，验证即可)
+- [X] T032 [US2] Add pull-to-refresh functionality on ProjectListScreen
 
 **Checkpoint**: User Story 2完了 - プロジェクト一覧表示とリアルタイム更新が動作
 
@@ -119,16 +119,16 @@
 
 ### Implementation for User Story 3
 
-- [ ] T033 [P] [US3] Create task providers in lib/features/task_management/providers/task_providers.dart (projectTasksProvider, taskProvider, projectStatisticsProvider using StreamProvider/FutureProvider)
-- [ ] T034 [P] [US3] Create TaskListController in lib/features/task_management/presentation/controllers/task_list_controller.dart (infinite scroll state management, load initial/more tasks)
-- [ ] T035 [US3] Create ProjectDetailScreen in lib/features/task_management/presentation/screens/project_detail_screen.dart (displays project info + task list, FAB for new task)
-- [ ] T036 [P] [US3] Create TaskTile widget in lib/features/task_management/presentation/widgets/task_tile.dart (displays task name, description, due date, checkbox for completion)
-- [ ] T037 [P] [US3] Create TaskEditScreen in lib/features/task_management/presentation/screens/task_edit_screen.dart (form for creating/editing task with name, description, due date)
-- [ ] T038 [US3] Implement task creation flow: form validation (name 1-200 chars, description 0-1000 chars), Firestore write with projectId and userId
-- [ ] T039 [US3] Add due date picker to TaskEditScreen (DatePicker widget)
-- [ ] T040 [US3] Display overdue indicator on TaskTile (red color when dueDate < now && !isCompleted)
-- [ ] T041 [US3] Add empty state UI in ProjectDetailScreen (no tasks message + create button)
-- [ ] T042 [US3] Add loading states and error handling for task operations
+- [X] T033 [P] [US3] Create task providers in lib/features/task_management/providers/task_providers.dart (projectTasksProvider, taskProvider, projectStatisticsProvider using StreamProvider/FutureProvider)
+- [X] T034 [P] [US3] Create TaskListController in lib/features/task_management/presentation/controllers/task_list_controller.dart (infinite scroll state management, load initial/more tasks)
+- [X] T035 [US3] Create ProjectDetailScreen in lib/features/task_management/presentation/screens/project_detail_screen.dart (displays project info + task list, FAB for new task)
+- [X] T036 [P] [US3] Create TaskTile widget in lib/features/task_management/presentation/widgets/task_tile.dart (displays task name, description, due date, checkbox for completion)
+- [X] T037 [P] [US3] Create TaskEditScreen in lib/features/task_management/presentation/screens/task_edit_screen.dart (form for creating/editing task with name, description, due date)
+- [X] T038 [US3] Implement task creation flow: form validation (name 1-200 chars, description 0-1000 chars), Firestore write with projectId and userId
+- [X] T039 [US3] Add due date picker to TaskEditScreen (DatePicker widget)
+- [X] T040 [US3] Display overdue indicator on TaskTile (red color when dueDate < now && !isCompleted)
+- [X] T041 [US3] Add empty state UI in ProjectDetailScreen (no tasks message + create button)
+- [X] T042 [US3] Add loading states and error handling for task operations
 
 **Checkpoint**: User Story 3完了 - タスク作成機能が動作、プロジェクト詳細画面で表示
 
@@ -147,17 +147,17 @@
 
 ### Implementation for User Story 4
 
-- [ ] T043 [US4] Implement task completion toggle logic in TaskListController (optimistic update + toggleTaskCompletion call)
-- [ ] T044 [US4] Add checkbox interaction to TaskTile (onTap triggers completion toggle)
-- [ ] T045 [US4] Update TaskTile UI for completed tasks (strikethrough text, checkmark icon, gray color)
-- [ ] T046 [US4] Implement completedAt timestamp recording in FirestoreTaskRepository.toggleTaskCompletion
-- [ ] T047 [US4] Add real-time progress rate update in ProjectDetailScreen (watches projectStatisticsProvider)
-- [ ] T048 [US4] Implement completion undo (tap checkbox again to uncheck, completedAt = null)
-- [ ] T049 [P] [US4] Create CompletionCelebrationDialog widget in lib/features/task_management/presentation/widgets/completion_celebration_dialog.dart (shown when project reaches 100%)
-- [ ] T050 [US4] Add project completion detection in ProjectDetailController: when completionRate == 100%, show CompletionCelebrationDialog
-- [ ] T051 [US4] Integrate AI praise API (non-blocking async call after task completion - placeholder for future AI integration from 001-user-auth)
-- [ ] T052 [US4] Add toast/snackbar notification for AI praise message when it arrives
-- [ ] T053 [US4] Handle error states when task completion fails (rollback optimistic update, show error message)
+- [X] T043 [US4] Implement task completion toggle logic in TaskListController (optimistic update + toggleTaskCompletion call)
+- [X] T044 [US4] Add checkbox interaction to TaskTile (onTap triggers completion toggle)
+- [X] T045 [US4] Update TaskTile UI for completed tasks (strikethrough text, checkmark icon, gray color)
+- [X] T046 [US4] Implement completedAt timestamp recording in FirestoreTaskRepository.toggleTaskCompletion
+- [X] T047 [US4] Add real-time progress rate update in ProjectDetailScreen (watches projectStatisticsProvider)
+- [X] T048 [US4] Implement completion undo (tap checkbox again to uncheck, completedAt = null)
+- [X] T049 [P] [US4] Create CompletionCelebrationDialog widget in lib/features/task_management/presentation/widgets/completion_celebration_dialog.dart (shown when project reaches 100%)
+- [X] T050 [US4] Add project completion detection in ProjectDetailController: when completionRate == 100%, show CompletionCelebrationDialog
+- [X] T051 [US4] Integrate AI praise API (non-blocking async call after task completion - placeholder for future AI integration from 001-user-auth)
+- [X] T052 [US4] Add toast/snackbar notification for AI praise message when it arrives
+- [X] T053 [US4] Handle error states when task completion fails (rollback optimistic update, show error message)
 
 **Checkpoint**: User Story 4完了 - タスク完了機能、進捗率更新、プロジェクト完了祝福が動作
 
@@ -175,14 +175,14 @@
 
 ### Implementation for User Story 5
 
-- [ ] T054 [P] [US5] Create ProjectDetailController in lib/features/task_management/presentation/controllers/project_detail_controller.dart (handles project edit logic)
-- [ ] T055 [US5] Add edit mode to ProjectDetailScreen (edit button, inline form or dialog)
-- [ ] T056 [US5] Implement project update flow: validation (name 1-100 chars), Firestore update, UI refresh
-- [ ] T057 [US5] Add edit mode to TaskEditScreen (reuse for both create and edit, pass taskId for edit)
-- [ ] T058 [US5] Implement task update flow: validation (name 1-200 chars), Firestore update via taskRepository.updateTask
-- [ ] T059 [US5] Add cancel button to edit forms (discard changes, return to previous screen)
-- [ ] T060 [US5] Handle concurrent edit conflicts (Last Write Wins strategy per research.md)
-- [ ] T061 [US5] Add loading states during update operations
+- [X] T054 [P] [US5] Create ProjectDetailController in lib/features/task_management/presentation/controllers/project_detail_controller.dart (handles project edit logic)
+- [X] T055 [US5] Add edit mode to ProjectDetailScreen (edit button, inline form or dialog)
+- [X] T056 [US5] Implement project update flow: validation (name 1-100 chars), Firestore update, UI refresh
+- [X] T057 [US5] Add edit mode to TaskEditScreen (reuse for both create and edit, pass taskId for edit)
+- [X] T058 [US5] Implement task update flow: validation (name 1-200 chars), Firestore update via taskRepository.updateTask
+- [X] T059 [US5] Add cancel button to edit forms (discard changes, return to previous screen)
+- [X] T060 [US5] Handle concurrent edit conflicts (Last Write Wins strategy per research.md)
+- [X] T061 [US5] Add loading states during update operations
 
 **Checkpoint**: User Story 5完了 - プロジェクトとタスクの編集機能が動作
 
@@ -200,14 +200,14 @@
 
 ### Implementation for User Story 6
 
-- [ ] T062 [P] [US6] Create DeleteConfirmationDialog widget in lib/shared/widgets/delete_confirmation_dialog.dart (reusable confirmation dialog)
-- [ ] T063 [US6] Add delete button to ProjectDetailScreen (shows DeleteConfirmationDialog with warning for tasks count)
-- [ ] T064 [US6] Implement cascade delete in FirestoreProjectRepository.deleteProject (batch delete project + all tasks)
-- [ ] T065 [US6] Add swipe-to-delete gesture to TaskTile (shows delete button on swipe left)
-- [ ] T066 [US6] Implement task delete in FirestoreTaskRepository.deleteTask
-- [ ] T067 [US6] Add progress rate recalculation after task deletion
-- [ ] T068 [US6] Handle deletion errors (show error message, retry option)
-- [ ] T069 [US6] Navigate back to project list after project deletion
+- [X] T062 [P] [US6] Create DeleteConfirmationDialog widget in lib/shared/widgets/delete_confirmation_dialog.dart (reusable confirmation dialog)
+- [X] T063 [US6] Add delete button to ProjectDetailScreen (shows DeleteConfirmationDialog with warning for tasks count)
+- [X] T064 [US6] Implement cascade delete in FirestoreProjectRepository.deleteProject (batch delete project + all tasks)
+- [X] T065 [US6] Add swipe-to-delete gesture to TaskTile (shows delete button on swipe left)
+- [X] T066 [US6] Implement task delete in FirestoreTaskRepository.deleteTask
+- [X] T067 [US6] Add progress rate recalculation after task deletion
+- [X] T068 [US6] Handle deletion errors (show error message, retry option)
+- [X] T069 [US6] Navigate back to project list after project deletion
 
 **Checkpoint**: User Story 6完了 - プロジェクトとタスクの削除機能が動作
 
@@ -247,12 +247,12 @@
 - Principle II: 段階的機能追加
 - Research.md Topic 1準拠: ListView.builder + Firestore cursor pagination
 
-- [ ] T079 Implement pagination state in TaskListController (page size = 30, hasMore flag, lastDocument cursor)
-- [ ] T080 Add scroll listener to ProjectDetailScreen ListView (detects bottom reached, triggers loadMore)
-- [ ] T081 Implement loadMore method in TaskListController (fetches next page with startAfterDoc cursor)
-- [ ] T082 Add loading indicator at bottom of task list when loading more tasks
-- [ ] T083 Handle end of list state (no more tasks to load)
-- [ ] T084 Add pull-to-refresh to reload first page of tasks
+- [X] T079 Implement pagination state in TaskListController (page size = 30, hasMore flag, lastDocument cursor)
+- [X] T080 Add scroll listener to ProjectDetailScreen ListView (detects bottom reached, triggers loadMore)
+- [X] T081 Implement loadMore method in TaskListController (fetches next page with startAfterDoc cursor)
+- [X] T082 Add loading indicator at bottom of task list when loading more tasks
+- [X] T083 Handle end of list state (no more tasks to load)
+- [X] T084 Add pull-to-refresh to reload first page of tasks
 
 **Checkpoint**: 無限スクロール完成 - 100+タスクでも快適に動作
 
@@ -266,13 +266,13 @@
 - FR-013準拠: Last Write Wins + オフライン変更タイムスタンプ記録
 - Research.md Topic 5準拠: Optimistic updates
 
-- [ ] T085 Enable Firestore offline persistence in main.dart (FirebaseFirestore.instance.settings = Settings(persistenceEnabled: true))
-- [ ] T086 Add network connectivity monitoring (connectivity_plus package)
-- [ ] T087 Add offline indicator in app bar (shows when offline)
-- [ ] T088 Implement optimistic updates for all mutations (create, update, delete, toggle completion)
-- [ ] T089 Add conflict resolution handling (Last Write Wins strategy)
-- [ ] T090 Add offline operation queue visualization (optional: show pending syncs)
-- [ ] T091 Add retry mechanism for failed syncs when connection restored
+- [X] T085 Enable Firestore offline persistence in main.dart (FirebaseFirestore.instance.settings = Settings(persistenceEnabled: true))
+- [X] T086 Add network connectivity monitoring (connectivity_plus package)
+- [X] T087 Add offline indicator in app bar (shows when offline)
+- [X] T088 Implement optimistic updates for all mutations (create, update, delete, toggle completion)
+- [X] T089 Add conflict resolution handling (Last Write Wins strategy)
+- [X] T090 Add offline operation queue visualization (optional: show pending syncs)
+- [X] T091 Add retry mechanism for failed syncs when connection restored
 
 **Checkpoint**: オフライン対応完成 - ネットワーク切断中も操作可能
 
