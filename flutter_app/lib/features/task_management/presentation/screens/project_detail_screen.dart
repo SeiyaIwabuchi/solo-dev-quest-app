@@ -4,8 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/project.dart';
 import '../../data/models/task.dart';
 import '../../providers/task_providers.dart';
+import '../../providers/project_providers.dart';
 import '../../providers/repository_providers.dart';
-import '../controllers/task_list_controller.dart';
+import '../../domain/enums/task_sort_by.dart';
 import '../widgets/task_tile.dart';
 import '../widgets/progress_indicator_widget.dart';
 import '../widgets/completion_celebration_dialog.dart';
@@ -14,8 +15,8 @@ import '../../../../shared/widgets/delete_confirmation_dialog.dart';
 import '../../../../shared/widgets/offline_indicator.dart';
 import 'task_edit_screen.dart';
 
-/// プロジェクト詳細画面
-class ProjectDetailScreen extends ConsumerStatefulWidget {
+/// プロジェクト詳細画面（リアルタイム同期対応）
+class ProjectDetailScreen extends ConsumerWidget {
   const ProjectDetailScreen({
     super.key,
     required this.project,
@@ -24,179 +25,196 @@ class ProjectDetailScreen extends ConsumerStatefulWidget {
   final Project project;
 
   @override
-  ConsumerState<ProjectDetailScreen> createState() => _ProjectDetailScreenState();
-}
-
-class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
-  late Project _currentProject;
-  final ScrollController _scrollController = ScrollController();
-  bool _isLoadingInitial = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentProject = widget.project;
-    _scrollController.addListener(_onScroll);
-    
-    // 初期データを読み込み
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadInitialTasks();
-    });
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  /// 初期タスク一覧を読み込み
-  Future<void> _loadInitialTasks() async {
-    final controller = ref.read(taskListControllerProvider.notifier);
-    await controller.loadInitialTasks(_currentProject.id);
-    if (mounted) {
-      setState(() {
-        _isLoadingInitial = false;
-      });
-    }
-  }
-
-  /// スクロールイベントを処理
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent * 0.8) {
-      // 80%スクロールしたら次のページを読み込み
-      final controller = ref.read(taskListControllerProvider.notifier);
-      controller.loadMoreTasks(_currentProject.id);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
-    // プロジェクトの統計情報を取得
-    final statisticsAsync = ref.watch(projectTaskStatisticsProvider(_currentProject.id));
+    // プロジェクト情報をリアルタイムで監視
+    final projectAsync = ref.watch(projectProvider(project.id));
+    
+    // タスク一覧をリアルタイムで監視
+    final tasksAsync = ref.watch(projectTasksProvider(ProjectTasksParams(
+      projectId: project.id,
+      sortBy: TaskSortBy.createdAt,
+      filterCompleted: null,
+      limit: 1000, // 全タスクを表示
+    )));
 
-    return Scaffold(
-      appBar: AppBarWithOfflineIndicator(
-        title: _currentProject.name,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () => _showEditProjectDialog(context),
-          ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'delete') {
-                _handleDeleteProject(context);
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('プロジェクトを削除', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
+    // プロジェクトの統計情報を取得
+    final statisticsAsync = ref.watch(projectTaskStatisticsProvider(project.id));
+
+    return projectAsync.when(
+      loading: () => const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      error: (error, stack) => Scaffold(
+        appBar: AppBar(title: const Text('エラー')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: theme.colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'エラーが発生しました',
+                style: theme.textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                style: theme.textTheme.bodyMedium,
+                textAlign: TextAlign.center,
               ),
             ],
           ),
-        ],
+        ),
       ),
-      body: Column(
-        children: [
-          // プロジェクト情報カード
-          Card(
-            margin: const EdgeInsets.all(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_currentProject.description != null &&
-                      _currentProject.description!.isNotEmpty) ...[
-                    Text(
-                      _currentProject.description!,
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  
-                  // 進捗率表示
-                  statisticsAsync.when(
-                    data: (statistics) => ProgressIndicatorWidget(
-                      progressRate: statistics.completionRate,
-                    ),
-                    loading: () => const ProgressIndicatorWidget(
-                      progressRate: 0.0,
-                    ),
-                    error: (_, __) => const ProgressIndicatorWidget(
-                      progressRate: 0.0,
+      data: (currentProject) {
+        // プロジェクトが削除された場合
+        if (currentProject == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('プロジェクトが削除されました'),
+                ),
+              );
+            }
+          });
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        return Scaffold(
+          appBar: AppBarWithOfflineIndicator(
+            title: currentProject.name,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () => _showEditProjectDialog(context, ref, currentProject),
+              ),
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'delete') {
+                    _handleDeleteProject(context, ref, currentProject);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('プロジェクトを削除', style: TextStyle(color: Colors.red)),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-
-          // タスク一覧セクション
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'タスク一覧',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+          body: Column(
+            children: [
+              // プロジェクト情報カード
+              Card(
+                margin: const EdgeInsets.all(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (currentProject.description != null &&
+                          currentProject.description!.isNotEmpty) ...[
+                        Text(
+                          currentProject.description!,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      
+                      // 進捗率表示
+                      statisticsAsync.when(
+                        data: (statistics) => ProgressIndicatorWidget(
+                          progressRate: statistics.completionRate,
+                        ),
+                        loading: () => const ProgressIndicatorWidget(
+                          progressRate: 0.0,
+                        ),
+                        error: (_, __) => const ProgressIndicatorWidget(
+                          progressRate: 0.0,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                statisticsAsync.when(
-                  data: (statistics) => Text(
-                    '${statistics.completedTasks} / ${statistics.totalTasks}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.bold,
+              ),
+
+              // タスク一覧セクション
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'タスク一覧',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
+                    statisticsAsync.when(
+                      data: (statistics) => Text(
+                        '${statistics.completedTasks} / ${statistics.totalTasks}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
 
-          // タスク一覧
-          Expanded(
-            child: _buildTaskList(context, theme),
+              // タスク一覧
+              Expanded(
+                child: _buildTaskList(context, ref, theme, currentProject, tasksAsync),
+              ),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showTaskEditScreen(context),
-        icon: const Icon(Icons.add),
-        label: const Text('新規タスク'),
-      ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _showTaskEditScreen(context, ref, currentProject),
+            icon: const Icon(Icons.add),
+            label: const Text('新規タスク'),
+          ),
+        );
+      },
     );
   }
 
   /// タスク一覧を構築
-  Widget _buildTaskList(BuildContext context, ThemeData theme) {
-    final taskListState = ref.watch(taskListControllerProvider);
-
-    if (_isLoadingInitial) {
-      return const Center(
+  Widget _buildTaskList(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeData theme,
+    Project currentProject,
+    AsyncValue<List<Task>> tasksAsync,
+  ) {
+    return tasksAsync.when(
+      loading: () => const Center(
         child: CircularProgressIndicator(),
-      );
-    }
-
-    if (taskListState.error != null) {
-      return Center(
+      ),
+      error: (error, stack) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -212,62 +230,50 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              taskListState.error.toString(),
+              error.toString(),
               style: theme.textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: () => _loadInitialTasks(),
+              onPressed: () => ref.invalidate(projectTasksProvider),
               icon: const Icon(Icons.refresh),
               label: const Text('再読み込み'),
             ),
           ],
         ),
-      );
-    }
-
-    if (taskListState.tasks.isEmpty) {
-      return _buildEmptyState(context);
-    }
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        await _loadInitialTasks();
-      },
-      child: ListView.separated(
-        controller: _scrollController,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: taskListState.tasks.length + (taskListState.hasMore ? 1 : 0),
-        separatorBuilder: (context, index) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          // ローディングインジケーターを表示
-          if (index == taskListState.tasks.length) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: taskListState.isLoadingMore
-                    ? const CircularProgressIndicator()
-                    : const SizedBox.shrink(),
-              ),
-            );
-          }
-
-          final task = taskListState.tasks[index];
-          return TaskTile(
-            task: task,
-            onTap: () => _showTaskEditScreen(context, task: task),
-            onCheckboxTap: (isCompleted) =>
-                _handleTaskCompletion(context, ref, task.id, isCompleted),
-            onDelete: () => _handleDeleteTask(context, task),
-          );
-        },
       ),
+      data: (tasks) {
+        if (tasks.isEmpty) {
+          return _buildEmptyState(context, ref, currentProject);
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(projectTasksProvider);
+          },
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: tasks.length,
+            separatorBuilder: (context, index) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final task = tasks[index];
+              return TaskTile(
+                task: task,
+                onTap: () => _showTaskEditScreen(context, ref, currentProject, task: task),
+                onCheckboxTap: (isCompleted) =>
+                    _handleTaskCompletion(context, ref, currentProject, task.id, isCompleted),
+                onDelete: () => _handleDeleteTask(context, ref, currentProject, task),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
   /// 空状態UI
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState(BuildContext context, WidgetRef ref, Project currentProject) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -292,7 +298,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           ),
           const SizedBox(height: 32),
           FilledButton.icon(
-            onPressed: () => _showTaskEditScreen(context),
+            onPressed: () => _showTaskEditScreen(context, ref, currentProject),
             icon: const Icon(Icons.add),
             label: const Text('タスクを作成'),
           ),
@@ -302,48 +308,47 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   }
 
   /// プロジェクト編集ダイアログを表示
-  Future<void> _showEditProjectDialog(BuildContext context) async {
-    final updatedProject = await EditProjectDialog.show(
+  Future<void> _showEditProjectDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Project currentProject,
+  ) async {
+    await EditProjectDialog.show(
       context: context,
-      project: _currentProject,
+      project: currentProject,
     );
-
-    if (updatedProject != null && mounted) {
-      setState(() {
-        _currentProject = updatedProject;
-      });
-    }
+    // リアルタイム同期により自動的に更新されるため、手動更新不要
   }
 
   /// タスク作成・編集画面を表示
-  Future<void> _showTaskEditScreen(BuildContext context, {Task? task}) async {
-    final result = await Navigator.of(context).push<bool>(
+  Future<void> _showTaskEditScreen(
+    BuildContext context,
+    WidgetRef ref,
+    Project currentProject,
+    {Task? task}
+  ) async {
+    await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (context) => TaskEditScreen(
-          projectId: _currentProject.id,
+          projectId: currentProject.id,
           task: task,
         ),
       ),
     );
-
-    if (result == true && context.mounted) {
-      // タスクが作成/更新された場合は、タスクリストを再読み込み
-      await _loadInitialTasks();
-      // プロジェクト統計を更新
-      ref.invalidate(projectTaskStatisticsProvider(_currentProject.id));
-    }
+    // リアルタイム同期により自動的に更新されるため、手動更新不要
   }
 
   /// タスク完了状態を切り替え
   Future<void> _handleTaskCompletion(
     BuildContext context,
     WidgetRef ref,
+    Project currentProject,
     String taskId,
     bool isCompleted,
   ) async {
     try {
-      final controller = ref.read(taskListControllerProvider.notifier);
-      await controller.toggleTaskCompletion(
+      final repository = ref.read(taskRepositoryProvider);
+      await repository.toggleTaskCompletion(
         taskId: taskId,
         isCompleted: isCompleted,
       );
@@ -359,15 +364,9 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
           ),
         );
 
-        // タスクリストを再読み込み
-        await _loadInitialTasks();
-        
-        // プロジェクト統計を更新
-        ref.invalidate(projectTaskStatisticsProvider(_currentProject.id));
-
         // タスクを完了した場合、プロジェクトが100%完了したか確認
         if (isCompleted) {
-          _checkProjectCompletion(context);
+          _checkProjectCompletion(context, ref, currentProject);
         }
       }
     } catch (e) {
@@ -383,14 +382,18 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   }
 
   /// プロジェクト完了を確認し、100%の場合は祝福ダイアログを表示
-  Future<void> _checkProjectCompletion(BuildContext context) async {
+  Future<void> _checkProjectCompletion(
+    BuildContext context,
+    WidgetRef ref,
+    Project currentProject,
+  ) async {
     // 少し待ってから統計を取得（Firestoreの更新が反映されるまで）
     await Future.delayed(const Duration(milliseconds: 500));
 
     if (!context.mounted) return;
 
     final statisticsAsync = await ref.read(
-      projectTaskStatisticsProvider(_currentProject.id).future,
+      projectTaskStatisticsProvider(currentProject.id).future,
     );
 
     // 完了率が100%の場合、祝福ダイアログを表示
@@ -398,7 +401,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
       if (context.mounted) {
         await CompletionCelebrationDialog.show(
           context: context,
-          projectName: _currentProject.name,
+          projectName: currentProject.name,
           // TODO: AI褒めメッセージの統合（Phase 5 T051で実装）
           aiPraiseMessage: null,
         );
@@ -407,9 +410,13 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   }
 
   /// プロジェクト削除を処理
-  Future<void> _handleDeleteProject(BuildContext context) async {
+  Future<void> _handleDeleteProject(
+    BuildContext context,
+    WidgetRef ref,
+    Project currentProject,
+  ) async {
     // タスク数を取得
-    final statisticsAsync = ref.read(projectTaskStatisticsProvider(_currentProject.id));
+    final statisticsAsync = ref.read(projectTaskStatisticsProvider(currentProject.id));
     
     final taskCount = statisticsAsync.when(
       data: (statistics) => statistics.totalTasks,
@@ -441,7 +448,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
 
       // プロジェクトを削除（関連タスクも削除される）
       final repository = ref.read(projectRepositoryProvider);
-      await repository.deleteProject(projectId: _currentProject.id);
+      await repository.deleteProject(projectId: currentProject.id);
 
       if (context.mounted) {
         // ローディングを閉じる
@@ -450,7 +457,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         // 成功メッセージを表示
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${_currentProject.name}を削除しました'),
+            content: Text('${currentProject.name}を削除しました'),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -476,7 +483,12 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
   }
 
   /// タスク削除を処理
-  Future<void> _handleDeleteTask(BuildContext context, Task task) async {
+  Future<void> _handleDeleteTask(
+    BuildContext context,
+    WidgetRef ref,
+    Project currentProject,
+    Task task,
+  ) async {
     try {
       final repository = ref.read(taskRepositoryProvider);
       await repository.deleteTask(taskId: task.id);
@@ -489,13 +501,8 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
             duration: const Duration(seconds: 2),
           ),
         );
-
-        // タスクリストを再読み込み
-        await _loadInitialTasks();
-        
-        // プロジェクト統計を更新
-        ref.invalidate(projectTaskStatisticsProvider(_currentProject.id));
       }
+      // リアルタイム同期により自動的に更新されるため、手動更新不要
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
