@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:solo_dev_quest/core/exceptions/validation_exception.dart';
 import 'package:solo_dev_quest/core/exceptions/not_found_exception.dart';
 import 'package:solo_dev_quest/features/task_management/data/models/task.dart';
@@ -19,22 +20,50 @@ import 'package:solo_dev_quest/features/task_management/data/repositories/firest
 /// ```
 void main() {
   late FirestoreTaskRepository repository;
-  const testUserId = 'test-user-123';
+  late String testUserId;
   const testProjectId = 'test-project-123';
 
   setUpAll(() async {
     // Firebase初期化（Emulator接続）
-    await Firebase.initializeApp(
-      options: const FirebaseOptions(
-        apiKey: 'test-api-key',
-        appId: 'test-app-id',
-        messagingSenderId: 'test-sender-id',
-        projectId: 'test-project-id',
-      ),
-    );
+    try {
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: 'test-api-key',
+          appId: 'test-app-id',
+          messagingSenderId: 'test-sender-id',
+          projectId: 'test-project-id',
+        ),
+      );
+    } catch (e) {
+      // 既に初期化されている場合は無視
+      print('Firebase already initialized: $e');
+    }
 
     // Firebase Emulator接続設定
-    FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+    try {
+      FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+    } catch (e) {
+      // 既に設定されている場合は無視
+      print('Firestore emulator already configured: $e');
+    }
+    
+    // Firebase Auth Emulator接続設定
+    try {
+      FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+    } catch (e) {
+      // 既に設定されている場合は無視
+      print('Auth emulator already configured: $e');
+    }
+    
+    // テストユーザーで匿名ログイン（Firestore Rulesをパスするため）
+    try {
+      final userCredential = await FirebaseAuth.instance.signInAnonymously();
+      testUserId = userCredential.user!.uid;
+      print('Test user signed in: $testUserId');
+    } catch (e) {
+      print('Failed to sign in test user: $e');
+      throw Exception('Cannot run tests without authenticated user');
+    }
     
     // Firestoreの設定（オフライン永続化無効化 - テスト用）
     FirebaseFirestore.instance.settings = const Settings(
