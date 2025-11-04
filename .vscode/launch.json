@@ -5,24 +5,34 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "flutter_app",
-            "cwd": "flutter_app",
-            "request": "launch",
-            "type": "dart"
-        },
-        {
-            "name": "flutter_app (profile mode)",
+            "name": "flutter_app (Debug)",
             "cwd": "flutter_app",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "program": "lib/main.dart",
+            "args": []
         },
         {
-            "name": "flutter_app (release mode)",
+            "name": "flutter_app (Profile - Production)",
             "cwd": "flutter_app",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "release"
+            "program": "lib/main.dart",
+            "flutterMode": "profile",
+            "toolArgs": [
+                "--dart-define-from-file=firebase_config.production.env"
+            ]
+        },
+        {
+            "name": "flutter_app (Release - Production)",
+            "cwd": "flutter_app",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "flutterMode": "release",
+            "toolArgs": [
+                "--dart-define-from-file=firebase_config.production.env"
+            ]
         }
     ]
 }

@@ -4,22 +4,15 @@ on:
   push:
     branches:
       - production
-  pull_request:
-    branches:
-      - production
-    types:
-      - closed
   workflow_dispatch: # 手動実行を許可
 
 env:
   NODE_VERSION: '24'
 
 jobs:
-  deploy-firestore-rules:
-    name: Deploy Firestore Rules
+  deploy-firebase:
+    name: Deploy Firebase Resources
     runs-on: ubuntu-latest
-    # PRがマージされた場合のみ実行、またはproductionブランチへの直接push
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     
     steps:
       - name: Checkout code
@@ -38,17 +31,27 @@ jobs:
         with:
           credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
 
-      - name: Deploy Firestore Rules
+      - name: Install Functions dependencies
+        run: |
+          cd firebase/functions
+          npm ci
+
+      - name: Deploy Firestore Rules and Indexes
         run: |
           cd firebase
-          firebase deploy --only firestore:rules --project 
+          firebase deploy --only firestore --project ${{ secrets.FIREBASE_PROJECT_ID }}
+
+      - name: Deploy Cloud Functions
+        run: |
+          cd firebase
+          firebase deploy --only functions --project ${{ secrets.FIREBASE_PROJECT_ID }}
 
       - name: Deployment Summary
         run: |
           echo "✅ Firestore Rules deployed"
+          echo "✅ Firestore Indexes deployed"
+          echo "✅ Cloud Functions deployed"
           echo "🎉 Deployment completed successfully!"
-          echo ""
-          echo "Note: Cloud Functions are not deployed (Spark plan limitation)"
 
       - name: Discord notification - Success
         if: success()
@@ -59,7 +62,11 @@ jobs:
           avatar-url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
           embed-title: "🔥 Firebaseデプロイ完了"
           embed-description: |
-            **Solo Dev Quest** のFirestoreルールがデプロイされました。
+            **Solo Dev Quest** のFirebaseリソースがデプロイされました。
+            
+            - ✅ Firestore Rules
+            - ✅ Firestore Indexes
+            - ✅ Cloud Functions
             
             **ブランチ**: `${{ github.ref_name }}`
             **コミット**: `${{ github.sha }}`
@@ -78,7 +85,7 @@ jobs:
           avatar-url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
           embed-title: "❌ Firebaseデプロイ失敗"
           embed-description: |
-            **Solo Dev Quest** のFirestoreルールのデプロイが失敗しました。
+            **Solo Dev Quest** のFirebaseリソースのデプロイが失敗しました。
             
             **ブランチ**: `${{ github.ref_name }}`
             **コミット**: `${{ github.sha }}`
