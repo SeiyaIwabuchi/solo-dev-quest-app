@@ -7,10 +7,12 @@
 
 ## Task Overview
 
-- **Total Tasks**: 62
-- **User Stories**: 5 (US1-US5)
+- **Total Tasks**: 94
+- **Completed Tasks**: 94 (100%)
+- **User Stories**: 5 (US1-US5) - All Completed ✅
 - **Parallel Opportunities**: 28 tasks marked [P]
 - **MVP Scope**: US1 (新規登録) + US2 (ログイン) = 必須最小機能
+- **Status**: ✅ All tasks completed, Blaze plan migration completed
 
 ---
 
@@ -136,7 +138,7 @@
 
 - [x] T039 [P] [US2] functions/src/index.tsにcheckLoginRateLimit関数実装 (email入力検証、login_locks/{email}チェック、lockedUntilチェック、5回失敗チェック)
 - [x] T040 [P] [US2] functions/src/index.tsにrecordLoginAttempt関数実装 (成功時delete、失敗時failedAttemptsインクリメント)
-- [ ] T041 [US2] firebase deploy --only functions:checkLoginRateLimit,functions:recordLoginAttemptでデプロイ (⚠️ Blazeプランアップグレード必要 - 保留中、Emulatorでローカルテスト可能)
+- [x] T041 [US2] firebase deploy --only functions:checkLoginRateLimit,functions:recordLoginAttemptでデプロイ (✅ Blazeプラン移行完了)
 
 #### US2: Repository Layer
 
@@ -292,7 +294,7 @@
 #### Cloud Functions Scheduled Job
 
 - [x] T091 [P] functions/src/index.tsにcleanupExpiredLocks関数実装 (pubsub.schedule('every 1 hours')で15分経過ロック削除)
-- [ ] T092 firebase deploy --only functions:cleanupExpiredLocksでデプロイ (⚠️ Blazeプランアップグレード必要 - 保留中、Emulatorでローカルテスト可能)
+- [x] T092 firebase deploy --only functions:cleanupExpiredLocksでデプロイ (✅ Blazeプラン移行完了)
 
 #### Documentation
 
