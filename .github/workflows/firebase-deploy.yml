@@ -4,11 +4,6 @@ on:
   push:
     branches:
       - production
-  pull_request:
-    branches:
-      - production
-    types:
-      - closed
   workflow_dispatch: # 手動実行を許可
 
 env:
@@ -18,8 +13,6 @@ jobs:
   deploy-firebase:
     name: Deploy Firebase Resources
     runs-on: ubuntu-latest
-    # PRがマージされた場合のみ実行、またはproductionブランチへの直接push
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     
     steps:
       - name: Checkout code
