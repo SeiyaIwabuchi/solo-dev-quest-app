@@ -51,7 +51,15 @@ jobs:
     - name: Build APK
       run: |
         cd flutter_app
-        flutter build apk --release
+        flutter build apk --release \
+          --dart-define=FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }} \
+          --dart-define=FIREBASE_MESSAGING_SENDER_ID=${{ secrets.FIREBASE_MESSAGING_SENDER_ID }} \
+          --dart-define=FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }} \
+          --dart-define=FIREBASE_ANDROID_API_KEY=${{ secrets.FIREBASE_ANDROID_API_KEY }} \
+          --dart-define=FIREBASE_ANDROID_APP_ID=${{ secrets.FIREBASE_ANDROID_APP_ID }} \
+          --dart-define=FIREBASE_IOS_API_KEY=${{ secrets.FIREBASE_IOS_API_KEY }} \
+          --dart-define=FIREBASE_IOS_APP_ID=${{ secrets.FIREBASE_IOS_APP_ID }} \
+          --dart-define=FIREBASE_IOS_BUNDLE_ID=${{ secrets.FIREBASE_IOS_BUNDLE_ID }}
         
     - name: Get version from pubspec.yaml
       id: version
@@ -73,10 +81,6 @@ jobs:
           
           ### 📱 ダウンロード
           - **Android**: APKファイルをダウンロードしてインストール
-          
-          ### ✨ 変更内容
-          - Hello World リリース
-          - 基本的なFlutterアプリケーション
           
           ### 🔧 技術情報
           - Flutter: 3.35.7
