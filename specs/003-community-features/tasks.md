@@ -91,13 +91,13 @@
 
 ### Cloud Functions for User Story 1
 
-- [ ] T026 [P] [US1] Implement postQuestion Cloud Function in functions/src/community/post_question.ts (Firestoreトランザクションで残高チェック→減算→質問作成)
-- [ ] T027 [P] [US1] Add duplicate question prevention logic in postQuestion (同一タイトル5分制限)
+- [x] T026 [P] [US1] Implement postQuestion Cloud Function in functions/src/community/post_question.ts (Firestoreトランザクションで残高チェック→減算→質問作成)
+- [x] T027 [P] [US1] Add duplicate question prevention logic in postQuestion (同一タイトル5分制限)
 
 ### Data Layer for User Story 1
 
-- [ ] T028 [P] [US1] Implement QuestionRepositoryImpl in lib/features/community/data/repositories/question_repository_impl.dart (Firestore CRUD)
-- [ ] T029 [P] [US1] Create question_provider.dart in lib/features/community/providers/ (StateNotifierProvider for question list state)
+- [x] T028 [P] [US1] Implement QuestionRepositoryImpl in lib/features/community/data/repositories/question_repository_impl.dart (Firestore CRUD)
+- [x] T029 [P] [US1] Create question_provider.dart in lib/features/community/providers/ (StateNotifierProvider for question list state)
 
 ### Presentation Layer for User Story 1
 

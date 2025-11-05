@@ -276,3 +276,10 @@ export const recordLoginAttempt = onRequest(
     }
   }
 );
+
+// ========================
+// Phase 2: Community Features
+// ========================
+
+// Export postQuestion Cloud Function
+export {postQuestion} from "./community/post_question";
