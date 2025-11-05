@@ -110,9 +110,9 @@
 
 ### Error Handling for User Story 1
 
-- [ ] T036 [US1] Add DevCoin insufficient balance dialog in QuestionPostScreen
-- [ ] T037 [P] [US1] Add duplicate post error handling in QuestionPostScreen
-- [ ] T038 [P] [US1] Add offline cache strategy with sqflite in lib/features/community/data/local/question_cache.dart
+- [x] T036 [US1] Add DevCoin insufficient balance dialog in QuestionPostScreen
+- [x] T037 [P] [US1] Add duplicate post error handling in QuestionPostScreen
+- [x] T038 [P] [US1] Add offline cache strategy with sqflite in lib/features/community/data/local/question_cache.dart
 
 **Checkpoint**: User Story 1完成 - 質問投稿・閲覧機能が独立して動作し、テスト可能
 

@@ -11,6 +11,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_options.dart';
 import 'core/router/app_router.dart';
 import 'core/services/retry_service.dart';
+import 'features/community/data/local/question_cache.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,7 +42,27 @@ void main() async {
     await _connectToFirebaseEmulator();
   }
   
+  // T038: 古いキャッシュを削除（24時間以上前のデータ）
+  _cleanupOldCache();
+  
   runApp(const ProviderScope(child: MyApp()));
+}
+
+/// T038: 古いキャッシュを削除（バックグラウンドで実行）
+void _cleanupOldCache() {
+  Future.microtask(() async {
+    try {
+      final cache = QuestionCache();
+      final deletedCount = await cache.deleteOldCache();
+      if (kDebugMode) {
+        print('Deleted $deletedCount old cached questions');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Failed to cleanup old cache: $e');
+      }
+    }
+  });
 }
 
 Future<void> _connectToFirebaseEmulator() async {

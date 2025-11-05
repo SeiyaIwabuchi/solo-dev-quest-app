@@ -4,21 +4,26 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../domain/models/question.dart';
 import '../../domain/repositories/question_repository.dart';
+import '../local/question_cache.dart';
 
 /// 質問リポジトリ実装
 /// Firestore + Cloud Functionsを使用したQ&A機能のデータアクセス
+/// T038: オフラインキャッシュ統合（過去24時間の質問をローカルに保存）
 class QuestionRepositoryImpl implements QuestionRepository {
   QuestionRepositoryImpl({
     FirebaseFirestore? firestore,
     FirebaseFunctions? functions,
     FirebaseAuth? auth,
+    QuestionCache? cache,
   })  : _firestore = firestore ?? FirebaseFirestore.instance,
         _functions = functions ?? FirebaseFunctions.instance,
-        _auth = auth ?? FirebaseAuth.instance;
+        _auth = auth ?? FirebaseAuth.instance,
+        _cache = cache ?? QuestionCache();
 
   final FirebaseFirestore _firestore;
   final FirebaseFunctions _functions;
   final FirebaseAuth _auth;
+  final QuestionCache _cache;
 
   @override
   Future<Question> postQuestion({
@@ -63,7 +68,21 @@ class QuestionRepositoryImpl implements QuestionRepository {
         return null;
       }
 
-      return Question.fromFirestore(doc);
+      final question = Question.fromFirestore(doc);
+      
+      // T038: キャッシュに保存（閲覧履歴として記録）
+      await _cache.cacheQuestion(question);
+
+      return question;
+    } on FirebaseException catch (e) {
+      // オフライン時: キャッシュから取得を試みる
+      if (e.code == 'unavailable') {
+        final cachedQuestion = await _cache.getCachedQuestion(questionId);
+        if (cachedQuestion != null) {
+          return cachedQuestion;
+        }
+      }
+      throw Exception('質問の取得に失敗しました: $e');
     } catch (e) {
       throw Exception('質問の取得に失敗しました: $e');
     }
@@ -111,7 +130,26 @@ class QuestionRepositoryImpl implements QuestionRepository {
       query = query.limit(limit);
 
       final snapshot = await query.get();
-      return snapshot.docs.map((doc) => Question.fromFirestore(doc)).toList();
+      final questions = snapshot.docs.map((doc) => Question.fromFirestore(doc)).toList();
+      
+      // T038: 取得した質問をキャッシュに保存
+      for (final question in questions) {
+        await _cache.cacheQuestion(question);
+      }
+      
+      return questions;
+    } on FirebaseException catch (e) {
+      // オフライン時: キャッシュから取得を試みる
+      if (e.code == 'unavailable') {
+        if (categoryTag != null) {
+          return await _cache.getCachedQuestionsByCategory(
+            categoryTag,
+            limit: limit,
+          );
+        }
+        return await _cache.getCachedQuestions(limit: limit);
+      }
+      throw Exception('質問一覧の取得に失敗しました: $e');
     } catch (e) {
       throw Exception('質問一覧の取得に失敗しました: $e');
     }
