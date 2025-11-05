@@ -52,21 +52,21 @@
 
 **Constitution Principle III準拠**: Firebase-First Architecture
 
-- [ ] T008 Update firebase/firestore.rules with Phase 2 security rules (questions, answers, comments, content_reports collections)
-- [ ] T009 [P] Create lib/features/community/domain/models/question.dart with freezed
-- [ ] T010 [P] Create lib/features/community/domain/models/answer.dart with freezed
-- [ ] T011 [P] Create lib/features/community/domain/models/comment.dart with freezed
-- [ ] T012 [P] Create lib/features/community/domain/models/content_report.dart with freezed
-- [ ] T013 [P] Create lib/features/community/domain/models/hashtag_post.dart with freezed
-- [ ] T014 [P] Create lib/features/community/domain/models/premium_subscription.dart with freezed
-- [ ] T015 Create lib/features/community/domain/repositories/question_repository.dart interface
-- [ ] T016 Create lib/features/community/domain/repositories/answer_repository.dart interface
-- [ ] T017 Create lib/features/community/domain/repositories/sns_repository.dart interface
-- [ ] T018 Create lib/features/community/domain/repositories/subscription_repository.dart interface
-- [ ] T019 Create lib/shared/widgets/category_tag_chip.dart (カテゴリタグUI部品)
-- [ ] T020 [P] Create lib/shared/widgets/devcoin_balance_display.dart (DevCoin残高表示部品)
-- [ ] T021 [P] Create lib/shared/widgets/markdown_viewer.dart (Markdown表示部品)
-- [ ] T022 Deploy firebase deploy --only firestore:rules
+- [x] T008 Update firebase/firestore.rules with Phase 2 security rules (questions, answers, comments, content_reports collections)
+- [x] T009 [P] Create lib/features/community/domain/models/question.dart with freezed
+- [x] T010 [P] Create lib/features/community/domain/models/answer.dart with freezed
+- [x] T011 [P] Create lib/features/community/domain/models/comment.dart with freezed
+- [x] T012 [P] Create lib/features/community/domain/models/content_report.dart with freezed
+- [x] T013 [P] Create lib/features/community/domain/models/hashtag_post.dart with freezed
+- [x] T014 [P] Create lib/features/community/domain/models/premium_subscription.dart with freezed
+- [x] T015 Create lib/features/community/domain/repositories/question_repository.dart interface
+- [x] T016 Create lib/features/community/domain/repositories/answer_repository.dart interface
+- [x] T017 Create lib/features/community/domain/repositories/sns_repository.dart interface
+- [x] T018 Create lib/features/community/domain/repositories/subscription_repository.dart interface
+- [x] T019 Create lib/shared/widgets/category_tag_chip.dart (カテゴリタグUI部品)
+- [x] T020 [P] Create lib/shared/widgets/devcoin_balance_display.dart (DevCoin残高表示部品)
+- [x] T021 [P] Create lib/shared/widgets/markdown_viewer.dart (Markdown表示部品)
+- [x] T022 Deploy firebase deploy --only firestore:rules
 
 **Checkpoint**: MVP基盤完成 - ユーザーストーリー実装を並行開始可能
 

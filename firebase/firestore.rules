@@ -76,5 +76,101 @@ service cloud.firestore {
       allow delete: if request.auth != null 
           && resource.data.userId == request.auth.uid;
     }
+
+    // ========================================
+    // Phase 2: Community Features
+    // ========================================
+    
+    // Questions - 質問（削除済みでないものは誰でも閲覧可能）
+    match /questions/{questionId} {
+      allow read: if resource.data.deletionStatus == 'normal';
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.authorId
+        && request.resource.data.deletionStatus == 'normal'
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 5
+        && request.resource.data.title.size() <= 200
+        && request.resource.data.body is string
+        && request.resource.data.body.size() >= 10
+        && request.resource.data.body.size() <= 10000;
+      allow update: if request.auth != null 
+        && request.auth.uid == resource.data.authorId
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['authorId', 'createdAt', 'deletionStatus', 'answerCount', 'viewCount', 'evaluationScore', 'bestAnswerId']);
+      allow delete: if false; // Cloud Functions only
+    }
+    
+    // Answers - 回答（削除済みでないものは誰でも閲覧可能）
+    match /answers/{answerId} {
+      allow read: if resource.data.deletionStatus == 'normal';
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.authorId
+        && request.resource.data.deletionStatus == 'normal'
+        && request.resource.data.body is string
+        && request.resource.data.body.size() >= 10
+        && request.resource.data.body.size() <= 10000;
+      allow update: if request.auth != null 
+        && request.auth.uid == resource.data.authorId
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['authorId', 'createdAt', 'questionId', 'isBestAnswer', 'deletionStatus', 'helpfulCount', 'notHelpfulCount', 'evaluationScore']);
+      allow delete: if false; // Cloud Functions only
+    }
+    
+    // Comments - コメント（削除済みでないものは誰でも閲覧可能）
+    match /comments/{commentId} {
+      allow read: if resource.data.deletionStatus == 'normal';
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.authorId
+        && request.resource.data.body is string
+        && request.resource.data.body.size() >= 1
+        && request.resource.data.body.size() <= 500;
+      allow update: if request.auth != null 
+        && request.auth.uid == resource.data.authorId
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['authorId', 'createdAt', 'targetType', 'targetId', 'deletionStatus']);
+      allow delete: if false; // Cloud Functions only
+    }
+    
+    // Content Reports - コンテンツ報告（報告者本人のみ閲覧可能）
+    match /content_reports/{reportId} {
+      allow read: if request.auth != null 
+        && request.auth.uid == resource.data.reporterId;
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.reporterId
+        && request.resource.data.reviewStatus == 'pending';
+      allow update, delete: if false; // Admin/Cloud Functions only
+    }
+    
+    // Hashtag Posts - ハッシュタグ投稿（認証済みユーザーは閲覧のみ可能）
+    match /hashtag_posts/{postId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Cloud Functions only
+    }
+    
+    // SNS Connections - SNSアカウント連携（本人のみアクセス可能）
+    match /sns_connections/{userId}/connections/{provider} {
+      allow read, write: if request.auth != null 
+        && request.auth.uid == userId;
+    }
+    
+    // API Rate Limits - APIレート制限（Cloud Functionsのみ）
+    match /api_rate_limits/{limitId} {
+      allow read, write: if false; // Cloud Functions only
+    }
+    
+    // Premium Subscriptions - プレミアムサブスクリプション（本人は閲覧のみ可能）
+    match /premium_subscriptions/{userId} {
+      allow read: if request.auth != null 
+        && request.auth.uid == userId;
+      allow write: if false; // Cloud Functions only
+    }
+    
+    // Answer Evaluations - 回答評価（誰でも閲覧可能、作成は1回のみ）
+    match /answer_evaluations/{evaluationId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null 
+        && evaluationId == request.auth.uid + '_' + request.resource.data.answerId;
+      allow update, delete: if false; // Immutable
+    }
   }
 }
