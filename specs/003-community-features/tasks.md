@@ -34,13 +34,13 @@
 
 **Purpose**: Phase 2コミュニティ機能の基本構造構築
 
-- [ ] T001 Create lib/features/community/ directory structure (data, domain, presentation, providers)
-- [ ] T002 [P] Add new dependencies to flutter_app/pubspec.yaml (in_app_purchase, cached_network_image, sqflite, flutter_appauth)
-- [ ] T003 [P] Add SNS SDK dependencies to functions/package.json (twitter-api-v2, axios, facebook-nodejs-business-sdk)
-- [ ] T004 [P] Create functions/src/community/ directory structure
-- [ ] T005 [P] Setup environment variables in functions/.env (TWITTER_CLIENT_ID, META_APP_ID, INSTAGRAM_APP_ID, APPLE_SHARED_SECRET)
-- [ ] T006 [P] Create Firestore indexes in firebase/firestore.indexes.json (questions, answers collections)
-- [ ] T007 Run firebase deploy --only firestore:indexes to create indexes
+- [x] T001 Create lib/features/community/ directory structure (data, domain, presentation, providers)
+- [x] T002 [P] Add new dependencies to flutter_app/pubspec.yaml (in_app_purchase, cached_network_image, sqflite, flutter_appauth)
+- [x] T003 [P] Add SNS SDK dependencies to functions/package.json (twitter-api-v2, axios, facebook-nodejs-business-sdk)
+- [x] T004 [P] Create functions/src/community/ directory structure
+- [x] T005 [P] Setup environment variables in functions/.env (TWITTER_CLIENT_ID, META_APP_ID, INSTAGRAM_APP_ID, APPLE_SHARED_SECRET)
+- [x] T006 [P] Create Firestore indexes in firebase/firestore.indexes.json (questions, answers collections)
+- [x] T007 Run firebase deploy --only firestore:indexes to create indexes
 
 ---
 

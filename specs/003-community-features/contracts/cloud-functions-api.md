@@ -151,7 +151,7 @@ interface EvaluateAnswerResponse {
 **Request**:
 ```typescript
 interface SearchQuestionsRequest {
-  keyword?: string;           // タイトル・本文の前方一致検索 (将来的にAlgolia統合)
+  keyword?: string;           // タイトルフィールドの前方一致検索（部分一致は不可。例: keyword="Fire"は"Firebase"にマッチするが、"base"ではマッチしない）。将来的にAlgolia統合で全文検索対応予定
   categoryTag?: string;       // カテゴリフィルタ
   sortBy: 'latest' | 'answer_count' | 'evaluation_score';
   limit?: number;             // デフォルト: 20, 最大: 50
@@ -187,7 +187,7 @@ interface SearchQuestionsResponse {
 **Implementation Notes**:
 - Firestore複合インデックスを活用 (categoryTag + sortBy順序)
 - キーワード検索は初期実装では`title`フィールドの前方一致 (`where('title', '>=', keyword)`)
-- ページネーション: `startAfterDocument()`使用
+- ページネーション: `startAfterDocument()`使用。`nextPageToken`は最後のドキュメントIDをBase64エンコードした文字列。クライアントは次ページ取得時にこのトークンを`startAfter`パラメータに渡す
 
 ---
 
@@ -292,7 +292,7 @@ interface FetchHashtagTimelineResponse {
   }>;
   hasMore: boolean;
   cacheStatus: {
-    twitter: 'available' | 'rate_limited' | 'error';
+    twitter: 'available' | 'rate_limited' | 'error';      // available: 正常取得, rate_limited: レート制限到達（キャッシュ返却）, error: API障害
     threads: 'available' | 'rate_limited' | 'error';
     instagram: 'available' | 'rate_limited' | 'error';
   };
@@ -353,7 +353,7 @@ interface ConnectSNSResponse {
 interface PerformSNSActionRequest {
   postId: string;            // hashtag_postsのpostId
   action: 'like' | 'retweet' | 'comment';
-  commentText?: string;      // action='comment'時に必須
+  commentText?: string;      // action='comment'時に必須（1~500文字）。action='like'または'retweet'時は不要
 }
 ```
 
@@ -405,7 +405,7 @@ interface VerifyPremiumPurchaseResponse {
 
 **Errors**:
 - `unauthenticated`: 未認証
-- `invalid-argument`: レシートが無効
+- `invalid-argument`: レシートが無効。詳細理由: `RECEIPT_EXPIRED`（有効期限切れ）, `RECEIPT_ALREADY_USED`（既に使用済み）, `RECEIPT_INVALID_FORMAT`（フォーマット不正）, `PRODUCT_ID_MISMATCH`（商品IDが一致しない）
 - `already-exists`: 既にサブスクリプション有効
 
 **Implementation Notes**:
@@ -560,7 +560,10 @@ interface ErrorResponse {
   code: 'unauthenticated' | 'permission-denied' | 'not-found' | 'already-exists' | 
         'invalid-argument' | 'failed-precondition' | 'resource-exhausted' | 'internal';
   message: string;  // 日本語エラーメッセージ
-  details?: any;    // 追加情報 (開発環境のみ)
+  details?: {
+    retryAfter?: string;  // レート制限エラー時の再試行可能時刻（ISO 8601形式、例: "2025-11-05T15:30:00Z"）
+    [key: string]: any;   // その他の追加情報（開発環境のみ）
+  };
 }
 ```
 
