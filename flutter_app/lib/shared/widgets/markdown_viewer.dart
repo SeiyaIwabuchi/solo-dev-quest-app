@@ -23,7 +23,7 @@ class MarkdownViewer extends StatelessWidget {
     return Markdown(
       data: data,
       selectable: selectable,
-      padding: padding,
+      padding: padding as EdgeInsets,
       styleSheet: MarkdownStyleSheet(
         // 本文スタイル
         p: theme.textTheme.bodyMedium,

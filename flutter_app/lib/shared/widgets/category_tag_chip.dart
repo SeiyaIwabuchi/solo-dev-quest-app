@@ -16,8 +16,6 @@ class CategoryTagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     // カテゴリごとの色マッピング
     final categoryColors = {
       'Flutter': Colors.blue,

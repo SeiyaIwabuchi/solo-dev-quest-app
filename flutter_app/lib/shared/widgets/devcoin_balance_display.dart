@@ -115,7 +115,6 @@ class _AnimatedDevCoinBalanceDisplayState
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  int? _previousBalance;
 
   @override
   void initState() {
@@ -133,7 +132,6 @@ class _AnimatedDevCoinBalanceDisplayState
   void didUpdateWidget(AnimatedDevCoinBalanceDisplay oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.balance != widget.balance) {
-      _previousBalance = oldWidget.balance;
       _controller.forward().then((_) => _controller.reverse());
     }
   }
