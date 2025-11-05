@@ -101,12 +101,12 @@
 
 ### Presentation Layer for User Story 1
 
-- [ ] T030 [US1] Create QuestionListScreen in lib/features/community/presentation/screens/question_list_screen.dart
-- [ ] T031 [P] [US1] Create QuestionDetailScreen in lib/features/community/presentation/screens/question_detail_screen.dart
-- [ ] T032 [P] [US1] Create QuestionPostScreen in lib/features/community/presentation/screens/question_post_screen.dart
-- [ ] T033 [P] [US1] Create QuestionListItem widget in lib/features/community/presentation/widgets/question_list_item.dart
-- [ ] T034 [US1] Add question post route to lib/core/router/app_router.dart
-- [ ] T035 [US1] Add Firebase Analytics events (question_posted, question_viewed) in question screens
+- [x] T030 [US1] Create QuestionListScreen in lib/features/community/presentation/screens/question_list_screen.dart
+- [x] T031 [P] [US1] Create QuestionDetailScreen in lib/features/community/presentation/screens/question_detail_screen.dart
+- [x] T032 [P] [US1] Create QuestionPostScreen in lib/features/community/presentation/screens/question_post_screen.dart
+- [x] T033 [P] [US1] Create QuestionListItem widget in lib/features/community/presentation/widgets/question_list_item.dart
+- [x] T034 [US1] Add question post route to lib/core/router/app_router.dart
+- [x] T035 [US1] Add Firebase Analytics events (question_posted, question_viewed) in question screens
 
 ### Error Handling for User Story 1
 

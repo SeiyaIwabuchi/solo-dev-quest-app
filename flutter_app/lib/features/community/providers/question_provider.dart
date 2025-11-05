@@ -4,12 +4,18 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../data/repositories/question_repository_impl.dart';
 import '../domain/models/question.dart';
 import '../domain/repositories/question_repository.dart';
+import '../services/community_analytics_service.dart';
 
 part 'question_provider.freezed.dart';
 
 /// 質問リポジトリプロバイダー
 final questionRepositoryProvider = Provider<QuestionRepository>((ref) {
   return QuestionRepositoryImpl();
+});
+
+/// コミュニティアナリティクスサービスプロバイダー (T035)
+final communityAnalyticsServiceProvider = Provider<CommunityAnalyticsService>((ref) {
+  return CommunityAnalyticsService();
 });
 
 /// 質問一覧の状態

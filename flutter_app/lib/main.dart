@@ -9,9 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_options.dart';
-import 'features/auth/providers/auth_provider.dart';
-import 'features/auth/presentation/screens/login_screen.dart';
-import 'features/task_management/presentation/screens/project_list_screen.dart';
+import 'core/router/app_router.dart';
 import 'core/services/retry_service.dart';
 
 void main() async {
@@ -55,13 +53,18 @@ Future<void> _connectToFirebaseEmulator() async {
   FirebaseFunctions.instance.useFunctionsEmulator(host, 5001);
 }
 
-/// T080-T081: App with authentication state-based routing
+/// T034: App with go_router navigation
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return MaterialApp(
+    // T091: Initialize retry service for automatic sync when connection restored
+    ref.read(retryServiceProvider);
+
+    final router = ref.watch(goRouterProvider);
+
+    return MaterialApp.router(
       title: 'Solo Dev Quest',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -77,110 +80,7 @@ class MyApp extends ConsumerWidget {
         Locale('ja', 'JP'),
         Locale('en', 'US'),
       ],
-      // T081: Authentication state-based routing
-      home: const AuthWrapper(),
-    );
-  }
-}
-
-/// T080-T081: Wrapper widget that handles authentication state routing
-class AuthWrapper extends ConsumerStatefulWidget {
-  const AuthWrapper({super.key});
-
-  @override
-  ConsumerState<AuthWrapper> createState() => _AuthWrapperState();
-}
-
-class _AuthWrapperState extends ConsumerState<AuthWrapper> {
-  bool _isCheckingSession = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkSession();
-    // T091: Initialize retry service for automatic sync when connection restored
-    ref.read(retryServiceProvider);
-  }
-
-  /// T080: Check session on app start
-  Future<void> _checkSession() async {
-    final authRepository = ref.read(authRepositoryProvider);
-    final currentUser = authRepository.getCurrentUser();
-
-    if (currentUser != null) {
-      // User is logged in, check session expiry
-      final isSessionValid = await authRepository.checkSessionExpiry(currentUser.uid);
-      
-      if (!isSessionValid && mounted) {
-        // Session expired, show message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('セッションの有効期限が切れました。再度ログインしてください。'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-
-    if (mounted) {
-      setState(() {
-        _isCheckingSession = false;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Show loading while checking session
-    if (_isCheckingSession) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    // T081: Listen to auth state changes and route accordingly
-    final authState = ref.watch(authStateChangesProvider);
-
-    return authState.when(
-      data: (user) {
-        if (user != null) {
-          // User is logged in, show project list screen
-          return const ProjectListScreen();
-        } else {
-          // User is not logged in, show login screen
-          return const LoginScreen();
-        }
-      },
-      loading: () => const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      ),
-      error: (error, stack) => Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('エラーが発生しました: $error'),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  // Retry
-                  setState(() {
-                    _isCheckingSession = true;
-                  });
-                  _checkSession();
-                },
-                child: const Text('再試行'),
-              ),
-            ],
-          ),
-        ),
-      ),
+      routerConfig: router,
     );
   }
 }
