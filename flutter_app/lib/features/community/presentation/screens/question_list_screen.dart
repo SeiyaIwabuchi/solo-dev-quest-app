@@ -61,6 +61,11 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('質問'),
+        leading: IconButton(
+          onPressed: () => context.go('/projects'),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'プロジェクト一覧に戻る',
+        ),
         actions: [
           // ソート切り替えボタン
           PopupMenuButton<String>(

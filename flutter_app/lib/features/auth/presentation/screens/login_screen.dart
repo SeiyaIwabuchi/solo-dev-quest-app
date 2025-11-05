@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../../../core/errors/auth_exceptions.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/error_dialog.dart';
-import 'password_reset_screen.dart';
-import 'register_screen.dart';
 
 /// ユーザーログイン画面
 /// 
@@ -70,8 +69,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         password: _passwordController.text,
       );
 
-      // ログイン成功
-      // 注: AuthWrapperが自動的にホーム画面に遷移するため、手動遷移は不要
+      // ログイン成功 - go_routerでホーム画面に遷移
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -79,6 +77,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             backgroundColor: Colors.green,
           ),
         );
+        // go_routerを使用してプロジェクト一覧画面に遷移
+        context.go('/projects');
       }
     } on RateLimitException catch (e) {
       // レート制限エラー - 特別な処理
@@ -185,11 +185,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   /// 新規登録画面への遷移
   void _navigateToRegister() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const RegisterScreen(),
-      ),
-    );
+    context.push('/register');
   }
 
   /// Googleサインインボタンタップ時の処理
@@ -210,8 +206,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         return;
       }
 
-      // ログイン成功
-      // 注: AuthWrapperが自動的にホーム画面に遷移するため、手動遷移は不要
+      // ログイン成功 - go_routerでホーム画面に遷移
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -219,6 +214,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             backgroundColor: Colors.green,
           ),
         );
+        // go_routerを使用してプロジェクト一覧画面に遷移
+        context.go('/projects');
       }
     } on NetworkException catch (e) {
       // T061: Googleサービス障害時のフォールバックメッセージ
@@ -421,11 +418,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onPressed: _isLoading
                       ? null
                       : () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const PasswordResetScreen(),
-                            ),
-                          );
+                          context.push('/password-reset');
                         },
                   child: const Text('パスワードを忘れた場合'),
                 ),

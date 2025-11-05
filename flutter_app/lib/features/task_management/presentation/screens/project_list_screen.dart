@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/models/project.dart';
 import '../../providers/project_providers.dart';
@@ -7,7 +8,6 @@ import '../../providers/task_providers.dart';
 import '../widgets/project_card.dart';
 import '../widgets/create_project_dialog.dart';
 import 'project_detail_screen.dart';
-import '../../../../shared/widgets/offline_indicator.dart';
 
 /// プロジェクト一覧画面
 class ProjectListScreen extends ConsumerWidget {
@@ -18,8 +18,16 @@ class ProjectListScreen extends ConsumerWidget {
     final projectsAsync = ref.watch(userProjectsProvider);
 
     return Scaffold(
-      appBar: const AppBarWithOfflineIndicator(
-        title: 'プロジェクト',
+      appBar: AppBar(
+        title: const Text('プロジェクト'),
+        actions: [
+          // 質問機能への直接アクセス
+          IconButton(
+            onPressed: () => context.go('/community/questions'),
+            icon: const Icon(Icons.help_outline),
+            tooltip: 'Q&A コミュニティ',
+          ),
+        ],
       ),
       body: projectsAsync.when(
         loading: () => const Center(
@@ -132,6 +140,12 @@ class ProjectListScreen extends ConsumerWidget {
             onPressed: () => _showCreateProjectDialog(context),
             icon: const Icon(Icons.add),
             label: const Text('プロジェクトを作成'),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () => context.go('/community/questions'),
+            icon: const Icon(Icons.help_outline),
+            label: const Text('質問を見る'),
           ),
         ],
       ),

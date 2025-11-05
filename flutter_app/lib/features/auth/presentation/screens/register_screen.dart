@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../../../core/errors/auth_exceptions.dart';
 import '../../../../core/utils/validators.dart';
@@ -9,7 +10,7 @@ import '../../../../shared/widgets/error_dialog.dart';
 /// ユーザー新規登録画面
 /// 
 /// メールアドレスとパスワードで新規ユーザー登録を行う。
-/// 登録成功後、ホーム画面に自動遷移する。
+/// 登録成功後、go_routerでプロジェクト一覧画面に遷移する。
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -81,17 +82,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         LoadingOverlay.hide(context);
       }
 
-      // 登録成功 - ホーム画面へ遷移
+      // 登録成功 - go_routerでホーム画面へ遷移
       if (mounted) {
-        // TODO: 実際のホーム画面が実装されたらNavigator.pushReplacementに変更
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('登録が完了しました'),
             backgroundColor: Colors.green,
           ),
         );
-        // 暫定的に前の画面に戻る（後でホーム画面遷移に変更）
-        Navigator.of(context).pop();
+        // go_routerを使用してプロジェクト一覧画面に遷移
+        context.go('/projects');
       }
     } on WeakPasswordException catch (e) {
       // Hide loading overlay

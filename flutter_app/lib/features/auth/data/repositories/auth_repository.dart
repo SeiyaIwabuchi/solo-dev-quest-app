@@ -213,7 +213,7 @@ class AuthRepository {
     try {
       final response = await http.post(
         Uri.parse(
-            'https://asia-northeast1-.cloudfunctions.net/checkLoginRateLimit'),
+            'https://asia-northeast1-solo-dev-quest-app.cloudfunctions.net/checkLoginRateLimit'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'email': email}),
       );
@@ -262,7 +262,7 @@ class AuthRepository {
     try {
       await http.post(
         Uri.parse(
-            'https://asia-northeast1-.cloudfunctions.net/recordLoginAttempt'),
+            'https://asia-northeast1-solo-dev-quest-app.cloudfunctions.net/recordLoginAttempt'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': email,

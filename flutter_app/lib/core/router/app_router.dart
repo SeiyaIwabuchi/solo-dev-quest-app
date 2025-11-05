@@ -1,19 +1,42 @@
 // T034: App Router with go_router
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/password_reset_screen.dart';
 import '../../features/task_management/presentation/screens/project_list_screen.dart';
 import '../../features/community/presentation/screens/question_list_screen.dart';
 import '../../features/community/presentation/screens/question_detail_screen.dart';
 import '../../features/community/presentation/screens/question_post_screen.dart';
+
+/// Firebase認証状態の変化を監視するためのクラス
+class GoRouterRefreshStream extends ChangeNotifier {
+  late final StreamSubscription<User?> _subscription;
+
+  GoRouterRefreshStream(Stream<User?> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen(
+      (User? user) => notifyListeners(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}
 
 /// アプリケーションのルーティング設定
 /// 
 /// ルート構造:
 /// - `/` - 認証状態に応じてログイン画面またはプロジェクト一覧画面
 /// - `/login` - ログイン画面
+/// - `/register` - 新規登録画面
+/// - `/password-reset` - パスワードリセット画面
 /// - `/projects` - プロジェクト一覧画面 (認証必須)
 /// - `/community/questions` - 質問一覧画面 (認証必須)
 /// - `/community/question/:id` - 質問詳細画面 (認証必須)
@@ -21,18 +44,21 @@ import '../../features/community/presentation/screens/question_post_screen.dart'
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: GoRouterRefreshStream(FirebaseAuth.instance.authStateChanges()),
     redirect: (context, state) {
       final user = FirebaseAuth.instance.currentUser;
       final isLoggedIn = user != null;
       final isLoggingIn = state.matchedLocation == '/login';
+      final isRegistering = state.matchedLocation == '/register';
+      final isResettingPassword = state.matchedLocation == '/password-reset';
 
-      // 未認証でログイン画面以外にアクセスしようとした場合
-      if (!isLoggedIn && !isLoggingIn) {
+      // 未認証で認証関連画面以外にアクセスしようとした場合
+      if (!isLoggedIn && !isLoggingIn && !isRegistering && !isResettingPassword) {
         return '/login';
       }
 
-      // 認証済みでログイン画面にアクセスしようとした場合
-      if (isLoggedIn && isLoggingIn) {
+      // 認証済みで認証関連画面にアクセスしようとした場合
+      if (isLoggedIn && (isLoggingIn || isRegistering || isResettingPassword)) {
         return '/projects';
       }
 
@@ -43,6 +69,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+
+      // 新規登録画面
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterScreen(),
+      ),
+
+      // パスワードリセット画面
+      GoRoute(
+        path: '/password-reset',
+        builder: (context, state) => const PasswordResetScreen(),
       ),
 
       // プロジェクト一覧画面 (ホーム)
