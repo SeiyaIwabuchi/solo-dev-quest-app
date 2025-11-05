@@ -85,9 +85,9 @@
 
 ### Tests for User Story 1
 
-- [ ] T023 [P] [US1] Integration test for question post flow in test/integration/community/question_post_test.dart
-- [ ] T024 [P] [US1] Integration test for question list & detail view in test/integration/community/question_view_test.dart
-- [ ] T025 [P] [US1] Widget test for QuestionListItem in test/widget/community/question_list_item_test.dart
+- [x] T023 [P] [US1] Integration test for question post flow in test/integration/community/question_post_test.dart
+- [x] T024 [P] [US1] Integration test for question list & detail view in test/integration/community/question_view_test.dart
+- [x] T025 [P] [US1] Widget test for QuestionListItem in test/widget/community/question_list_item_test.dart
 
 ### Cloud Functions for User Story 1
 
