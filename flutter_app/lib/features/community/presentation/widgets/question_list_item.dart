@@ -1,18 +1,20 @@
 // T033: QuestionListItem widget for displaying question in list view
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../domain/models/question.dart';
 import '../../../../shared/widgets/category_tag_chip.dart';
+import '../providers/user_info_provider.dart';
 
 /// 質問一覧のアイテムウィジェット
 /// 
 /// 表示内容:
 /// - タイトル、本文プレビュー (最大100文字)
-/// - 投稿者名、アバター、投稿日時
+/// - 投稿者名、アバター、投稿日時 (動的に取得)
 /// - カテゴリタグ
 /// - 統計情報 (回答数、閲覧数、評価スコア)
 /// - ベストアンサーバッジ (採用済みの場合)
-class QuestionListItem extends StatelessWidget {
+class QuestionListItem extends ConsumerWidget {
   final Question question;
   final VoidCallback onTap;
 
@@ -23,9 +25,12 @@ class QuestionListItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('yyyy/MM/dd HH:mm');
+    
+    // ユーザー情報を動的に取得
+    final userInfoAsync = ref.watch(userInfoProvider(question.authorId));
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -40,43 +45,114 @@ class QuestionListItem extends StatelessWidget {
               // ヘッダー: 投稿者情報 & 投稿日時
               Row(
                 children: [
-                  // アバター
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundImage: question.authorAvatarUrl != null
-                        ? NetworkImage(question.authorAvatarUrl!)
-                        : null,
-                    child: question.authorAvatarUrl == null
-                        ? Text(
-                            question.authorName.substring(0, 1).toUpperCase(),
-                            style: const TextStyle(fontSize: 14),
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 8),
-                  
-                  // 投稿者名 & 投稿日時
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  // ユーザー情報を動的に表示
+                  userInfoAsync.when(
+                    data: (userInfo) {
+                      final displayName = userInfo?.displayName ?? 'Anonymous';
+                      final photoURL = userInfo?.photoURL;
+                      
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // アバター
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundImage: photoURL != null
+                                ? NetworkImage(photoURL)
+                                : null,
+                            child: photoURL == null
+                                ? Text(
+                                    displayName.substring(0, 1).toUpperCase(),
+                                    style: const TextStyle(fontSize: 14),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 8),
+                          
+                          // 投稿者名 & 投稿日時
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                displayName,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                dateFormat.format(question.createdAt),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                    loading: () => Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          question.authorName,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                        const CircleAvatar(
+                          radius: 16,
+                          child: SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                        Text(
-                          dateFormat.format(question.createdAt),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '読込中...',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              dateFormat.format(question.createdAt),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    error: (_, __) => Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircleAvatar(
+                          radius: 16,
+                          child: Icon(Icons.person, size: 16),
+                        ),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Unknown',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              dateFormat.format(question.createdAt),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
+                  
+                  const Spacer(),
                   
                   // ベストアンサーバッジ
                   if (question.bestAnswerId != null)

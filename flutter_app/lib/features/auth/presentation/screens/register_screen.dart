@@ -20,6 +20,7 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _displayNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -27,9 +28,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   void dispose() {
+    _displayNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  /// 表示名のバリデーション
+  String? _validateDisplayName(String? value) {
+    if (value == null || value.isEmpty) {
+      return '表示名を入力してください';
+    }
+    if (value.length < 2) {
+      return '表示名は2文字以上で入力してください';
+    }
+    if (value.length > 20) {
+      return '表示名は20文字以内で入力してください';
+    }
+    return null;
   }
 
   /// メールアドレスのバリデーション
@@ -75,6 +91,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       await authRepository.registerWithEmailPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        displayName: _displayNameController.text.trim(),
       );
 
       // Hide loading overlay
@@ -208,6 +225,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
+                // 表示名入力フィールド
+                TextFormField(
+                  controller: _displayNameController,
+                  decoration: const InputDecoration(
+                    labelText: '表示名',
+                    hintText: '2〜20文字で入力してください',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  textInputAction: TextInputAction.next,
+                  validator: _validateDisplayName,
+                ),
+                const SizedBox(height: 16),
                 // メールアドレス入力フィールド
                 TextFormField(
                   controller: _emailController,

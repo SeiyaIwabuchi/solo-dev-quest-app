@@ -1,8 +1,11 @@
 import '../models/question.dart';
+import '../../../auth/domain/models/user_model.dart';
 
 /// 質問リポジトリインターフェース
 /// Q&A機能の質問データアクセスを抽象化
 abstract class QuestionRepository {
+  /// ユーザー情報を取得（authorName/authorAvatarUrl取得用）
+  Future<UserModel?> getUserInfo(String userId);
   /// 質問を投稿
   /// 10 DevCoinを消費してFirestoreに質問を作成
   Future<Question> postQuestion({

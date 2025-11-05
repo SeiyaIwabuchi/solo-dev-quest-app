@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../providers/question_provider.dart';
+import '../providers/user_info_provider.dart';
 import '../../domain/models/question.dart';
 import '../../../../shared/widgets/category_tag_chip.dart';
 import '../../../../shared/widgets/markdown_viewer.dart';
@@ -141,6 +142,8 @@ class _QuestionDetailScreenState extends ConsumerState<QuestionDetailScreen> {
 
   Widget _buildQuestionDetail(Question question, ThemeData theme) {
     final dateFormat = DateFormat('yyyy/MM/dd HH:mm');
+    // ユーザー情報を動的に取得
+    final userInfoAsync = ref.watch(userInfoProvider(question.authorId));
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -150,38 +153,108 @@ class _QuestionDetailScreenState extends ConsumerState<QuestionDetailScreen> {
           // ヘッダー: 投稿者情報 & カテゴリ
           Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: question.authorAvatarUrl != null
-                    ? NetworkImage(question.authorAvatarUrl!)
-                    : null,
-                child: question.authorAvatarUrl == null
-                    ? Text(
-                        question.authorName.substring(0, 1).toUpperCase(),
-                        style: const TextStyle(fontSize: 18),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // ユーザー情報を動的に表示
+              userInfoAsync.when(
+                data: (userInfo) {
+                  final displayName = userInfo?.displayName ?? 'Anonymous';
+                  final photoURL = userInfo?.photoURL;
+                  
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundImage: photoURL != null
+                            ? NetworkImage(photoURL)
+                            : null,
+                        child: photoURL == null
+                            ? Text(
+                                displayName.substring(0, 1).toUpperCase(),
+                                style: const TextStyle(fontSize: 18),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            dateFormat.format(question.createdAt),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+                loading: () => Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      question.authorName,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                    const CircleAvatar(
+                      radius: 24,
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     ),
-                    Text(
-                      dateFormat.format(question.createdAt),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '読込中...',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          dateFormat.format(question.createdAt),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                error: (_, __) => Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircleAvatar(
+                      radius: 24,
+                      child: Icon(Icons.person, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Unknown',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          dateFormat.format(question.createdAt),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+              const Spacer(),
               CategoryTagChip(
                 categoryTag: question.categoryTag,
                 isSelected: false,

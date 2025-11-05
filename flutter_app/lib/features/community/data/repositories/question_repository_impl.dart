@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../domain/models/question.dart';
 import '../../domain/repositories/question_repository.dart';
+import '../../../auth/domain/models/user_model.dart';
 import '../local/question_cache.dart';
 
 /// 質問リポジトリ実装
@@ -16,7 +17,8 @@ class QuestionRepositoryImpl implements QuestionRepository {
     FirebaseAuth? auth,
     QuestionCache? cache,
   })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _functions = functions ?? FirebaseFunctions.instance,
+        _functions = functions ?? 
+            FirebaseFunctions.instanceFor(region: 'asia-northeast1'),
         _auth = auth ?? FirebaseAuth.instance,
         _cache = cache ?? QuestionCache();
 
@@ -266,6 +268,20 @@ class QuestionRepositoryImpl implements QuestionRepository {
       if (!doc.exists) return null;
       return Question.fromFirestore(doc);
     });
+  }
+
+  @override
+  Future<UserModel?> getUserInfo(String userId) async {
+    try {
+      final doc = await _firestore.collection('users').doc(userId).get();
+      if (!doc.exists) {
+        return null;
+      }
+      return UserModel.fromFirestore(doc.data()!);
+    } catch (e) {
+      print('ユーザー情報の取得に失敗しました: $e');
+      return null;
+    }
   }
 
   /// FirebaseFunctionsExceptionを適切なエラーメッセージに変換

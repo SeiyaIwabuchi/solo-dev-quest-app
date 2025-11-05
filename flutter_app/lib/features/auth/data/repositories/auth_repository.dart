@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
@@ -44,6 +46,24 @@ class AuthRepository {
         _firebaseFirestore = firebaseFirestore ?? FirebaseFirestore.instance,
         _secureStorage = secureStorage ?? SecureStorageService();
 
+  /// Get Cloud Functions URL (production or emulator)
+  String _getCloudFunctionsUrl(String functionName) {
+    // 環境変数からプロジェクトIDを取得
+    const projectId = String.fromEnvironment(
+      'FIREBASE_PROJECT_ID',
+      defaultValue: 'demo-no-project',
+    );
+    
+    if (kDebugMode) {
+      // エミュレーター環境
+      final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
+      return 'http://$host:5001/$projectId/asia-northeast1/$functionName';
+    } else {
+      // 本番環境
+      return 'https://asia-northeast1-$projectId.cloudfunctions.net/$functionName';
+    }
+  }
+
   /// Registers a new user with email and password
   /// 
   /// Creates a Firebase Auth user and a corresponding Firestore user profile.
@@ -57,6 +77,7 @@ class AuthRepository {
   Future<User> registerWithEmailPassword({
     required String email,
     required String password,
+    String? displayName,
   }) async {
     try {
       // Create user with Firebase Authentication
@@ -71,10 +92,15 @@ class AuthRepository {
       }
 
       // Create user profile in Firestore
+      // Use provided displayName or generate from email if not provided
+      final finalDisplayName = displayName?.isNotEmpty == true 
+          ? displayName 
+          : email.split('@').first;
       await _createUserProfile(
         uid: user.uid,
         email: email,
         authProvider: 'email',
+        displayName: finalDisplayName,
       );
 
       // T078: Save token to secure storage for persistent login
@@ -212,8 +238,7 @@ class AuthRepository {
   Future<void> _checkRateLimit(String email) async {
     try {
       final response = await http.post(
-        Uri.parse(
-            'https://asia-northeast1-solo-dev-quest-app.cloudfunctions.net/checkLoginRateLimit'),
+        Uri.parse(_getCloudFunctionsUrl('checkLoginRateLimit')),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'email': email}),
       );
@@ -261,8 +286,7 @@ class AuthRepository {
   }) async {
     try {
       await http.post(
-        Uri.parse(
-            'https://asia-northeast1-solo-dev-quest-app.cloudfunctions.net/recordLoginAttempt'),
+        Uri.parse(_getCloudFunctionsUrl('recordLoginAttempt')),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': email,
@@ -286,6 +310,25 @@ class AuthRepository {
     } catch (e) {
       // Don't throw on update failure to avoid blocking user flow
       print('Failed to update last activity: $e');
+    }
+  }
+
+  /// Validates that the current user's Firestore profile exists
+  /// 
+  /// Returns true if the user exists in Firestore, false otherwise.
+  /// This is used to check data consistency between Firebase Auth and Firestore.
+  Future<bool> validateCurrentUserExists() async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        return false;
+      }
+
+      final doc = await _firebaseFirestore.collection('users').doc(user.uid).get();
+      return doc.exists;
+    } catch (e) {
+      print('Failed to validate user existence: $e');
+      return false;
     }
   }
 

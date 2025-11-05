@@ -14,7 +14,7 @@ class Question with _$Question {
     required String body,
     String? codeExample,
     required String authorId,
-    required String authorName,
+    @Default('読込中...') String authorName, // 動的に取得されるため、デフォルト値を設定
     String? authorAvatarUrl,
     required String categoryTag,
     required DateTime createdAt,
@@ -32,6 +32,7 @@ class Question with _$Question {
       _$QuestionFromJson(json);
 
   /// FirestoreドキュメントスナップショットからQuestionを生成
+  /// authorNameとauthorAvatarUrlは後方互換性のため保持（存在しない場合はデフォルト値）
   factory Question.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Question(
@@ -40,7 +41,7 @@ class Question with _$Question {
       body: data['body'] as String,
       codeExample: data['codeExample'] as String?,
       authorId: data['authorId'] as String,
-      authorName: data['authorName'] as String,
+      authorName: data['authorName'] as String? ?? '読込中...', // 動的取得用デフォルト
       authorAvatarUrl: data['authorAvatarUrl'] as String?,
       categoryTag: data['categoryTag'] as String,
       createdAt: (data['createdAt'] as Timestamp).toDate(),

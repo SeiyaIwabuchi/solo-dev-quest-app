@@ -92,8 +92,10 @@ class _QuestionPostScreenState extends ConsumerState<QuestionPostScreen> {
       // 質問一覧をリフレッシュ
       ref.read(questionListProvider.notifier).refresh();
 
-      // 質問詳細画面に遷移
-      context.go('/community/question/${question.questionId}');
+      // 質問詳細画面に遷移（投稿画面を閉じて詳細を開く）
+      if (!mounted) return;
+      Navigator.pop(context); // 投稿画面を閉じる
+      context.push('/community/question/${question.questionId}');
     } on Exception catch (e) {
       if (!mounted) return;
 
@@ -174,6 +176,9 @@ class _QuestionPostScreenState extends ConsumerState<QuestionPostScreen> {
 
   String _parseErrorMessage(String error) {
     // FirebaseFunctionsExceptionのメッセージをパース
+    if (error.contains('ユーザー情報が見つかりません') || error.contains('ユーザーが存在しません')) {
+      return 'ユーザー情報が見つかりません。再度ログインしてください。';
+    }
     if (error.contains('DevCoin残高が不足しています')) {
       return 'DevCoin残高が不足しています';
     }

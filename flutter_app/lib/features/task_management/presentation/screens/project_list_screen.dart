@@ -23,8 +23,8 @@ class ProjectListScreen extends ConsumerWidget {
         actions: [
           // 質問機能への直接アクセス
           IconButton(
-            onPressed: () => context.go('/community/questions'),
-            icon: const Icon(Icons.help_outline),
+            onPressed: () => context.push('/community/questions'),
+            icon: const Icon(Icons.question_answer),
             tooltip: 'Q&A コミュニティ',
           ),
         ],
@@ -143,7 +143,7 @@ class ProjectListScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
-            onPressed: () => context.go('/community/questions'),
+            onPressed: () => context.push('/community/questions'),
             icon: const Icon(Icons.help_outline),
             label: const Text('質問を見る'),
           ),

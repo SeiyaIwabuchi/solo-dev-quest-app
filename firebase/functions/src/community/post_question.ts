@@ -1,5 +1,11 @@
-import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import {onCall, HttpsError} from 'firebase-functions/v2/https';
+import {Timestamp, FieldValue} from 'firebase-admin/firestore';
+
+// Initialize Firebase Admin if not already initialized
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 /**
  * postQuestion Cloud Function
@@ -28,36 +34,37 @@ interface PostQuestionResponse {
   remainingDevCoin: number;
 }
 
-export const postQuestion = functions.https.onCall(
-  async (data: PostQuestionRequest, context): Promise<PostQuestionResponse> => {
+export const postQuestion = onCall<PostQuestionRequest>(
+  {region: 'asia-northeast1'},
+  async (request): Promise<PostQuestionResponse> => {
     // 認証チェック
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
+    if (!request.auth) {
+      throw new HttpsError(
         'unauthenticated',
         'ユーザー認証が必要です'
       );
     }
 
-    const userId = context.auth.uid;
-    const { title, body, codeExample, categoryTag } = data;
+    const userId = request.auth.uid;
+    const { title, body, codeExample, categoryTag } = request.data;
 
     // バリデーション
     if (!title || title.length < 5 || title.length > 200) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'invalid-argument',
         'タイトルは5~200文字である必要があります'
       );
     }
 
     if (!body || body.length < 10 || body.length > 10000) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'invalid-argument',
         '質問本文は10~10,000文字である必要があります'
       );
     }
 
     if (codeExample && codeExample.length > 5000) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'invalid-argument',
         'コード例は5,000文字以内である必要があります'
       );
@@ -65,7 +72,7 @@ export const postQuestion = functions.https.onCall(
 
     const validCategories = ['Flutter', 'Firebase', 'Dart', 'Backend', 'Design', 'Other'];
     if (!categoryTag || !validCategories.includes(categoryTag)) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'invalid-argument',
         'カテゴリタグが無効です'
       );
@@ -74,9 +81,7 @@ export const postQuestion = functions.https.onCall(
     const db = admin.firestore();
 
     // 重複投稿チェック（同一タイトル5分制限）
-    const fiveMinutesAgo = admin.firestore.Timestamp.fromMillis(
-      Date.now() - 5 * 60 * 1000
-    );
+    const fiveMinutesAgo = Timestamp.fromMillis(Date.now() - 5 * 60 * 1000);
 
     const duplicateCheck = await db
       .collection('questions')
@@ -88,24 +93,21 @@ export const postQuestion = functions.https.onCall(
       .get();
 
     if (!duplicateCheck.empty) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'resource-exhausted',
         '同じタイトルの質問は5分以内に投稿できません'
       );
     }
 
-    // ユーザー情報取得
+    // ユーザー情報の存在確認のみ実施
+    // authorNameとauthorAvatarUrlは表示時に動的に取得する
     const userDoc = await db.collection('users').doc(userId).get();
     if (!userDoc.exists) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'not-found',
         'ユーザー情報が見つかりません'
       );
     }
-
-    const userData = userDoc.data()!;
-    const authorName = userData.displayName || 'Anonymous';
-    const authorAvatarUrl = userData.photoURL || null;
 
     // Firestoreトランザクション実行
     try {
@@ -125,6 +127,7 @@ export const postQuestion = functions.https.onCall(
         }
 
         // 質問ドキュメント作成
+        // authorNameとauthorAvatarUrlは保存せず、表示時に動的に取得
         const questionRef = db.collection('questions').doc();
         const questionData = {
           questionId: questionRef.id,
@@ -132,10 +135,8 @@ export const postQuestion = functions.https.onCall(
           body,
           codeExample: codeExample || null,
           authorId: userId,
-          authorName,
-          authorAvatarUrl,
           categoryTag,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
           updatedAt: null,
           answerCount: 0,
           viewCount: 0,
@@ -161,7 +162,7 @@ export const postQuestion = functions.https.onCall(
           isFree: false,
           relatedId: questionRef.id,
           relatedType: 'question',
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
         });
 
         return {
@@ -173,12 +174,12 @@ export const postQuestion = functions.https.onCall(
       return result;
     } catch (error: any) {
       if (error.message === 'DevCoin残高が不足しています') {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           'failed-precondition',
           'DevCoin残高が不足しています。質問の投稿には10 DevCoinが必要です。'
         );
       }
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'internal',
         `質問の投稿に失敗しました: ${error.message}`
       );

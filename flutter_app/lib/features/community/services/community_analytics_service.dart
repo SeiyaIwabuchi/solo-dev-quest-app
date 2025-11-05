@@ -28,7 +28,7 @@ class CommunityAnalyticsService {
       parameters: {
         'question_id': questionId,
         'category_tag': categoryTag,
-        'has_code_example': hasCodeExample,
+        'has_code_example': hasCodeExample ? 'yes' : 'no',
       },
     );
   }
@@ -51,7 +51,7 @@ class CommunityAnalyticsService {
       parameters: {
         'question_id': questionId,
         'category_tag': categoryTag,
-        'has_answer': hasAnswer,
+        'has_answer': hasAnswer ? 'yes' : 'no',
         'view_source': viewSource,
       },
     );

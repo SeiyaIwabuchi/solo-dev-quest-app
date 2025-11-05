@@ -83,7 +83,10 @@ service cloud.firestore {
     
     // Questions - 質問（削除済みでないものは誰でも閲覧可能）
     match /questions/{questionId} {
-      allow read: if resource.data.deletionStatus == 'normal';
+      // Get: 削除されていない質問は誰でも閲覧可能
+      allow get: if resource.data.deletionStatus == 'normal';
+      // List: 認証済みユーザーはクエリ可能（deletionStatusフィルタはクエリ側で必須）
+      allow list: if request.auth != null;
       allow create: if request.auth != null 
         && request.auth.uid == request.resource.data.authorId
         && request.resource.data.deletionStatus == 'normal'
@@ -102,7 +105,10 @@ service cloud.firestore {
     
     // Answers - 回答（削除済みでないものは誰でも閲覧可能）
     match /answers/{answerId} {
-      allow read: if resource.data.deletionStatus == 'normal';
+      // Get: 削除されていない回答は誰でも閲覧可能
+      allow get: if resource.data.deletionStatus == 'normal';
+      // List: 認証済みユーザーはクエリ可能（deletionStatusフィルタはクエリ側で必須）
+      allow list: if request.auth != null;
       allow create: if request.auth != null 
         && request.auth.uid == request.resource.data.authorId
         && request.resource.data.deletionStatus == 'normal'
@@ -118,7 +124,10 @@ service cloud.firestore {
     
     // Comments - コメント（削除済みでないものは誰でも閲覧可能）
     match /comments/{commentId} {
-      allow read: if resource.data.deletionStatus == 'normal';
+      // Get: 削除されていないコメントは誰でも閲覧可能
+      allow get: if resource.data.deletionStatus == 'normal';
+      // List: 認証済みユーザーはクエリ可能（deletionStatusフィルタはクエリ側で必須）
+      allow list: if request.auth != null;
       allow create: if request.auth != null 
         && request.auth.uid == request.resource.data.authorId
         && request.resource.data.body is string

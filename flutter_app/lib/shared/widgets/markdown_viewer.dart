@@ -24,6 +24,8 @@ class MarkdownViewer extends StatelessWidget {
       data: data,
       selectable: selectable,
       padding: padding as EdgeInsets,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       styleSheet: MarkdownStyleSheet(
         // 本文スタイル
         p: theme.textTheme.bodyMedium,

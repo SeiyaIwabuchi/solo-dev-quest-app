@@ -37,7 +37,7 @@ class DefaultFirebaseOptions {
   static FirebaseOptions get android {
     const apiKey = String.fromEnvironment(
       'FIREBASE_ANDROID_API_KEY',
-      defaultValue: 'AIzaSyDummy-Android-Key-For-Emulator',
+      defaultValue: 'AIzaSyAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
     );
     const appId = String.fromEnvironment(
       'FIREBASE_ANDROID_APP_ID',
@@ -49,11 +49,11 @@ class DefaultFirebaseOptions {
     );
     const projectId = String.fromEnvironment(
       'FIREBASE_PROJECT_ID',
-      defaultValue: 'demo-project',
+      defaultValue: 'demo-no-project',
     );
     const storageBucket = String.fromEnvironment(
       'FIREBASE_STORAGE_BUCKET',
-      defaultValue: 'demo-project.appspot.com',
+      defaultValue: 'demo-no-project.appspot.com',
     );
 
     return FirebaseOptions(
@@ -71,7 +71,7 @@ class DefaultFirebaseOptions {
   static FirebaseOptions get ios {
     const apiKey = String.fromEnvironment(
       'FIREBASE_IOS_API_KEY',
-      defaultValue: 'AIzaSyDummy-iOS-Key-For-Emulator',
+      defaultValue: 'AIzaSyBbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
     );
     const appId = String.fromEnvironment(
       'FIREBASE_IOS_APP_ID',
@@ -83,11 +83,11 @@ class DefaultFirebaseOptions {
     );
     const projectId = String.fromEnvironment(
       'FIREBASE_PROJECT_ID',
-      defaultValue: 'demo-project',
+      defaultValue: 'demo-no-project',
     );
     const storageBucket = String.fromEnvironment(
       'FIREBASE_STORAGE_BUCKET',
-      defaultValue: 'demo-project.appspot.com',
+      defaultValue: 'demo-no-project.appspot.com',
     );
     const iosBundleId = String.fromEnvironment(
       'FIREBASE_IOS_BUNDLE_ID',

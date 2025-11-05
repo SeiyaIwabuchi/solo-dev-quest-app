@@ -11,6 +11,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_options.dart';
 import 'core/router/app_router.dart';
 import 'core/services/retry_service.dart';
+import 'core/services/user_validation_service.dart';
 import 'features/community/data/local/question_cache.dart';
 
 void main() async {
@@ -71,15 +72,58 @@ Future<void> _connectToFirebaseEmulator() async {
   
   await FirebaseAuth.instance.useAuthEmulator(host, 9099);
   FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
-  FirebaseFunctions.instance.useFunctionsEmulator(host, 5001);
+  
+  // Cloud Functions はリージョンを指定してエミュレーターに接続
+  FirebaseFunctions.instanceFor(region: 'asia-northeast1')
+      .useFunctionsEmulator(host, 5001);
 }
 
-/// T034: App with go_router navigation
-class MyApp extends ConsumerWidget {
+/// T034: App with go_router navigation and user validation
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
+  late final UserValidationService _userValidationService;
+
+  @override
+  void initState() {
+    super.initState();
+    _userValidationService = UserValidationService();
+    
+    // ライフサイクル監視を開始
+    WidgetsBinding.instance.addObserver(this);
+    
+    // アプリ起動時にユーザー検証を実行
+    _validateUserOnStartup();
+  }
+
+  @override
+  void dispose() {
+    // ライフサイクル監視を停止
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // アプリ復帰時にユーザー検証を実行
+    _userValidationService.handleLifecycleChange(state);
+  }
+
+  /// アプリ起動時にユーザー検証を実行
+  Future<void> _validateUserOnStartup() async {
+    // 起動直後は少し待ってから実行（Firebase初期化完了を待つ）
+    await Future.delayed(const Duration(milliseconds: 500));
+    await _userValidationService.validateAndLogoutIfNeeded();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // T091: Initialize retry service for automatic sync when connection restored
     ref.read(retryServiceProvider);
 

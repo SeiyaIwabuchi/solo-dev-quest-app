@@ -104,17 +104,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const QuestionListScreen(),
       ),
 
+      // 注意: より具体的なパス（/post）を先に定義する必要がある
+      // そうしないと /community/question/post が /community/question/:id にマッチしてしまう
+      GoRoute(
+        path: '/community/question/post',
+        builder: (context, state) => const QuestionPostScreen(),
+      ),
+
       GoRoute(
         path: '/community/question/:id',
         builder: (context, state) {
           final questionId = state.pathParameters['id']!;
           return QuestionDetailScreen(questionId: questionId);
         },
-      ),
-
-      GoRoute(
-        path: '/community/question/post',
-        builder: (context, state) => const QuestionPostScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

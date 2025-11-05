@@ -61,11 +61,6 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('質問'),
-        leading: IconButton(
-          onPressed: () => context.go('/projects'),
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'プロジェクト一覧に戻る',
-        ),
         actions: [
           // ソート切り替えボタン
           PopupMenuButton<String>(
@@ -182,7 +177,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           // T034: 質問投稿画面への遷移
-          context.go('/community/question/post');
+          context.push('/community/question/post');
         },
         icon: const Icon(Icons.add),
         label: const Text('質問する'),
@@ -314,7 +309,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
             );
             
             // T034: 質問詳細画面への遷移
-            context.go('/community/question/${question.questionId}');
+            context.push('/community/question/${question.questionId}');
           },
         );
       },
